@@ -1,0 +1,260 @@
+{
+  "name": "Mildly Outdoorsy - Shared IG Publisher - SAFE #6",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mildly-ig-publisher-safe-6",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "148a5676-3ed1-42d6-a8e0-35c9b3098d06",
+      "name": "Webhook",
+      "webhookId": "2388c09e-c71b-4fd2-a240-2f367a8ade5d"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b=$input.first().json.body || $input.first().json;\nconst imageUrl=b.image_url || b.instagram_image_url;\nif(!imageUrl) throw new Error('Missing image_url');\nreturn [{json:{record_id:b.record_id,queue_table:b.queue_table || 'carousel_queue',caption:b.caption || b.instagram_caption || '',image_url:imageUrl}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "790e2f61-cdd6-4b1b-b8c2-6df855f08c27",
+      "name": "Normalize Input"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v24.0/17841434331048402/media?image_url=' + encodeURIComponent($json.image_url) + '&caption=' + encodeURIComponent($json.caption || '') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "c6528eb7-82d8-47f7-8c32-50e32ed62ed4",
+      "name": "Instagram Create Image Container",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "FhYSJdoGK10NqgIX",
+          "name": "Instagram Query Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const res=$input.first().json; const src=$('Normalize Input').first().json; if(!res.id) throw new Error('No creation id from Instagram'); return [{json:{...src,instagram_creation_id:res.id}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "f4ce5a5f-5994-497e-add0-9eec16512bec",
+      "name": "Prepare Publish"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v24.0/17841434331048402/media_publish?creation_id=' + encodeURIComponent($json.instagram_creation_id) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        0
+      ],
+      "id": "82953d07-c05a-4a22-a789-8902c373d4b6",
+      "name": "Instagram Publish Image",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "FhYSJdoGK10NqgIX",
+          "name": "Instagram Query Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const pub=$input.first().json; const src=$('Prepare Publish').first().json; return [{json:{record_id:src.record_id,queue_table:src.queue_table,instagram_post_id:pub.id,published_at:new Date().toISOString(),status:'published'}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "5cbd9e92-b702-4593-838e-7ae2a77be8c2",
+      "name": "Prepare DB Update"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "={{ $json.queue_table }}",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.record_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "published"
+            },
+            {
+              "fieldId": "published_at",
+              "fieldValue": "={{ $json.published_at }}"
+            },
+            {
+              "fieldId": "instagram_post_id",
+              "fieldValue": "={{ $json.instagram_post_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        0
+      ],
+      "id": "bce46194-43d8-413e-bf28-63374be60e45",
+      "name": "Mark Queue Row Published",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, record_id: $('Prepare DB Update').first().json.record_id, instagram_post_id: $('Prepare DB Update').first().json.instagram_post_id } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1552,
+        0
+      ],
+      "id": "9d34a56c-233d-4b66-a341-165d7efbf606",
+      "name": "Respond"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Instagram Create Image Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Create Image Container": {
+      "main": [
+        [
+          {
+            "node": "Prepare Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Publish": {
+      "main": [
+        [
+          {
+            "node": "Instagram Publish Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Publish Image": {
+      "main": [
+        [
+          {
+            "node": "Prepare DB Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare DB Update": {
+      "main": [
+        [
+          {
+            "node": "Mark Queue Row Published",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Queue Row Published": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "e6debc42-0fba-404c-b754-ced378cc6f4f",
+  "meta": {
+    "instanceId": "7b3ca0ab272ef54f13238977d2c37a8659e0528de7067effda5cfba76f9e76df"
+  },
+  "id": "w9c45ithoPOcfjYv",
+  "tags": []
+}

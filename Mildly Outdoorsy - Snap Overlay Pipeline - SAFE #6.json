@@ -1,0 +1,200 @@
+{
+  "name": "Mildly Outdoorsy - Snap Overlay Pipeline - SAFE #6",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "26b33a7d-5305-41f1-9469-681de149f820",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "carousel_queue",
+        "limit": 10,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "pending"
+            },
+            {
+              "keyName": "content_type",
+              "condition": "eq",
+              "keyValue": "snap_overlay"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "c1de8702-c9f4-433d-8102-24a5a7de079e",
+      "name": "Get Pending Rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().map(i=>i.json); if(!rows.length) return []; const parse=v=>Date.parse(v||'')||0; rows.sort((a,b)=>parse(a.created_at)-parse(b.created_at)); const r=rows[0]; return [{json:{record_id:r.id,queue_table:'carousel_queue',headline_text:r.headline_text||r.slide_1_main_text||r.main_text||r.title||'',sub_text:r.slide_1_sub_text||r.sub_text||'',image_url:r.source_image_url||r.news_image_url||r.image_url||r.product_image_url||r.slide_1_image_url||'',caption:r.caption||r.instagram_caption||r.post_caption||r.headline_text||r.slide_1_main_text||''}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "dc7f0124-b400-40cf-bf4b-3215f18cddc3",
+      "name": "Pick Oldest"
+    },
+    {
+      "parameters": {
+        "template_id": {
+          "__rl": true,
+          "value": "yxbgkx7gwh3dx",
+          "mode": "id"
+        },
+        "configurationMode": "advanced",
+        "layersJson": "={\n  \"main_text\": { \"text\": \"{{ $json.headline_text }}\" },\n  \"sub_text\": { \"text\": \"{{ $json.sub_text }}\" },\n  \"background_image\": { \"image\": \"{{ $json.image_url }}\" }\n}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-placid.placid",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "e0e01a3f-8fae-4adc-a0f5-bbb68461d24c",
+      "name": "Create Image",
+      "credentials": {
+        "placidApi": {
+          "id": "82azTmxGonZRiIaA",
+          "name": "Placid account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const out=$input.first().json; const src=$('Pick Oldest').first().json; const imageUrl=out.image_url||out.url||out.public_url||out.publicUrl||out.data?.image_url||out.data?.url||out.image?.url; if(!imageUrl) throw new Error('Missing Placid output URL'); return [{json:{record_id:src.record_id,queue_table:src.queue_table,caption:src.caption,image_url:imageUrl}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "f7acb9f9-b09a-4d48-b465-b22b8b5b6f42",
+      "name": "Prepare Publish Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/mildly-ig-publisher-safe-6",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "4369c534-5b1f-46a2-a88c-1d2ceb96f419",
+      "name": "Call Shared IG Publisher"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Rows": {
+      "main": [
+        [
+          {
+            "node": "Pick Oldest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Oldest": {
+      "main": [
+        [
+          {
+            "node": "Create Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image": {
+      "main": [
+        [
+          {
+            "node": "Prepare Publish Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Publish Payload": {
+      "main": [
+        [
+          {
+            "node": "Call Shared IG Publisher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "d24df9c6-4d46-4dc8-89f0-85f59f68f1d9",
+  "meta": {
+    "instanceId": "7b3ca0ab272ef54f13238977d2c37a8659e0528de7067effda5cfba76f9e76df"
+  },
+  "id": "jwjjLHlBDV6c7i2N",
+  "tags": []
+}

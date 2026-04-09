@@ -1,0 +1,30 @@
+{
+  "project": "mildly-outdoorsy-n8n",
+  "workflows": [
+    {
+      "name": "carousel_pipeline",
+      "file": "Mildly Outdoorsy - Carousel Pipeline - SAFE #6 (1).json",
+      "purpose": "Product carousel generation and publishing"
+    },
+    {
+      "name": "newsapi_ingest",
+      "file": "Mildly Outdoorsy - NewsAPI Ingest - SAFE #6.json",
+      "purpose": "Find outdoors-relevant news and queue pending content rows"
+    },
+    {
+      "name": "twitter_card_pipeline",
+      "file": "Mildly Outdoorsy - Twitter Card Pipeline - SAFE #6 (1).json",
+      "purpose": "Render and publish pending twitter_card_balanced rows"
+    },
+    {
+      "name": "snap_overlay_pipeline",
+      "file": "Mildly Outdoorsy - Snap Overlay Pipeline - SAFE #6.json",
+      "purpose": "Render and publish pending snap_overlay rows"
+    },
+    {
+      "name": "shared_ig_publisher",
+      "file": "Mildly Outdoorsy - Shared IG Publisher - SAFE #6.json",
+      "purpose": "Shared single-image Instagram publisher"
+    }
+  ]
+}
