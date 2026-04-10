@@ -110,18 +110,37 @@ def resolve_live_workflow(
     return str(workflow.get("id")), workflow
 
 
+ALLOWED_TOP_LEVEL_FIELDS = ("name", "nodes", "connections", "settings", "staticData")
+ALLOWED_SETTINGS_FIELDS = (
+    "saveExecutionProgress",
+    "saveManualExecutions",
+    "saveDataErrorExecution",
+    "saveDataSuccessExecution",
+    "executionTimeout",
+    "errorWorkflow",
+    "timezone",
+    "executionOrder",
+)
+
+
 def build_payload(
     export_json: Dict[str, Any],
     existing_workflow: Dict[str, Any],
     workflow_id: str,
 ) -> Dict[str, Any]:
-    payload = dict(export_json)
-    payload.pop("id", None)
-    payload.pop("active", None)
-    payload.pop("versionId", None)
-    for field in ("tags", "settings", "staticData", "parentFolderId"):
-        if field not in payload and field in existing_workflow:
+    payload: Dict[str, Any] = {}
+    for field in ALLOWED_TOP_LEVEL_FIELDS:
+        if field in export_json:
+            payload[field] = export_json[field]
+        elif field in existing_workflow:
             payload[field] = existing_workflow[field]
+
+    raw_settings = payload.get("settings") or {}
+    payload["settings"] = {
+        key: value
+        for key, value in raw_settings.items()
+        if key in ALLOWED_SETTINGS_FIELDS
+    }
     return payload
 
 
