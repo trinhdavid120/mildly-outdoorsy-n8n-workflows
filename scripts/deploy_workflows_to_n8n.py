@@ -82,6 +82,10 @@ class N8NClient:
     def update_workflow(self, workflow_id: str, payload: Dict[str, Any]) -> Any:
         return self._request("PUT", f"/api/v1/workflows/{workflow_id}", payload)
 
+    def set_workflow_active(self, workflow_id: str, active: bool) -> Any:
+        payload = {"active": active}
+        return self._request("POST", f"/api/v1/workflows/{workflow_id}/activate", payload)
+
 
 def resolve_live_workflow(
     client: N8NClient, workflow_id: str, live_name: str
@@ -110,11 +114,10 @@ def build_payload(
     export_json: Dict[str, Any],
     existing_workflow: Dict[str, Any],
     workflow_id: str,
-    activate_after_sync: bool,
 ) -> Dict[str, Any]:
     payload = dict(export_json)
-    payload["active"] = activate_after_sync
     payload.pop("id", None)
+    payload.pop("active", None)
     for field in ("versionId", "tags", "settings", "staticData", "parentFolderId"):
         if field not in payload and field in existing_workflow:
             payload[field] = existing_workflow[field]
@@ -165,9 +168,9 @@ def main() -> None:
             export_json=export_json,
             existing_workflow=existing,
             workflow_id=resolved_id,
-            activate_after_sync=activate_after_sync,
         )
         client.update_workflow(resolved_id, payload)
+        client.set_workflow_active(resolved_id, activate_after_sync)
         print(f"[update] synced {workflow['file']}")
 
 
