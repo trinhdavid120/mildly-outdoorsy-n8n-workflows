@@ -80,20 +80,7 @@ class N8NClient:
         fail(f"Workflow {workflow_id} not found")
 
     def update_workflow(self, workflow_id: str, payload: Dict[str, Any]) -> Any:
-        attempts: List[Tuple[str, str]] = [
-            ("PUT", f"/api/v1/workflows/{workflow_id}"),
-            ("PATCH", f"/api/v1/workflows/{workflow_id}"),
-            ("PATCH", f"/rest/workflows/{workflow_id}"),
-        ]
-        last_error = None
-        for method, path in attempts:
-            try:
-                return self._request(method, path, payload)
-            except SystemExit as exc:
-                last_error = exc
-        if last_error:
-            raise last_error
-        fail(f"Unable to update workflow {workflow_id}")
+        return self._request("PUT", f"/api/v1/workflows/{workflow_id}", payload)
 
 
 def resolve_live_workflow(
@@ -126,8 +113,8 @@ def build_payload(
     activate_after_sync: bool,
 ) -> Dict[str, Any]:
     payload = dict(export_json)
-    payload["id"] = workflow_id
     payload["active"] = activate_after_sync
+    payload.pop("id", None)
     for field in ("versionId", "tags", "settings", "staticData", "parentFolderId"):
         if field not in payload and field in existing_workflow:
             payload[field] = existing_workflow[field]
