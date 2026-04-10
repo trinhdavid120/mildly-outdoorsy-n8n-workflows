@@ -14,23 +14,17 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
-    env:
-      HOME: /Users/davidtrinh
-      RUNNER_TEMP: /Users/davidtrinh/actions-runner/_work/_temp
-      RUNNER_TOOL_CACHE: /Users/davidtrinh/actions-runner/_work/_tool
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Prepare runner directories
         run: |
-          mkdir -p "$RUNNER_TEMP"
-          mkdir -p "$RUNNER_TOOL_CACHE"
+          mkdir -p "$HOME/actions-runner/_work/_temp"
+          mkdir -p "$HOME/actions-runner/_work/_tool"
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      - name: Confirm Python is available
+        run: python3 --version
 
       - name: Dry run workflow resolution
         env:
