@@ -1,29 +1,48 @@
 {
   "project": "mildly-outdoorsy-n8n",
+  "version": 1,
+  "defaults": {
+    "activate_after_sync": true
+  },
   "workflows": [
     {
       "name": "carousel_pipeline",
       "file": "Mildly Outdoorsy - Carousel Pipeline - SAFE #6 (1).json",
+      "live_name": "Mildly Outdoorsy - Carousel Pipeline - SAFE #6",
+      "n8n_workflow_id": "cvGzpoqABQPWTfl2",
+      "activate_after_sync": true,
       "purpose": "Product carousel generation and publishing"
     },
     {
       "name": "newsapi_ingest",
       "file": "Mildly Outdoorsy - NewsAPI Ingest - SAFE #6.json",
+      "live_name": "Mildly Outdoorsy - NewsAPI Ingest - SAFE #6",
+      "n8n_workflow_id": "Kdy76ceztftw8UR3",
+      "activate_after_sync": true,
       "purpose": "Find outdoors-relevant news and queue pending content rows"
     },
     {
       "name": "twitter_card_pipeline",
       "file": "Mildly Outdoorsy - Twitter Card Pipeline - SAFE #6 (1).json",
+      "live_name": "Mildly Outdoorsy - Twitter Card Pipeline - SAFE #6",
+      "n8n_workflow_id": "eixeRFqSMWNOag50",
+      "activate_after_sync": true,
       "purpose": "Render and publish pending twitter_card_balanced rows"
     },
     {
       "name": "snap_overlay_pipeline",
       "file": "Mildly Outdoorsy - Snap Overlay Pipeline - SAFE #6.json",
+      "live_name": "Mildly Outdoorsy - Snap Overlay Pipeline - SAFE #6",
+      "n8n_workflow_id": "uvU4XLVHZnrZRSLK",
+      "activate_after_sync": true,
       "purpose": "Render and publish pending snap_overlay rows"
     },
     {
       "name": "shared_ig_publisher",
       "file": "Mildly Outdoorsy - Shared IG Publisher - SAFE #6.json",
+      "live_name": "Mildly Outdoorsy - Shared IG Publisher - SAFE #6",
+      "n8n_workflow_id": "jOlZLRLnPCa03ppH",
+      "activate_after_sync": true,
       "purpose": "Shared single-image Instagram publisher"
     }
   ]

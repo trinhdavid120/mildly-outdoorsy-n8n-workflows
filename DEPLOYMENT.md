@@ -2,92 +2,99 @@
 
 ## What we want
 
-Use GitHub as the source of truth for workflow JSON exports so changes can be made in code, reviewed, pushed, and then deployed into the Docker-hosted n8n instance.
+Use GitHub as the source of truth for workflow JSON exports so changes can be made in code, pushed to `main`, and automatically synced into the Docker-hosted n8n instance.
 
-## Practical deployment options
+## Chosen deployment architecture
 
-### Option A: Manual import after pull
+This repo is set up for:
 
-Simplest setup.
+- GitHub Actions
+- a self-hosted GitHub runner on the Docker/n8n machine
+- n8n API key authentication
+- manifest-based workflow mapping
 
-1. Commit workflow JSON changes to GitHub.
-2. Pull latest repo on the machine running Docker n8n.
-3. In the n8n UI, import the updated workflow JSON files.
+Files involved:
 
-Good for:
+- deploy workflow:
+  [ .github/workflows/deploy-n8n.yml ](/Users/davidtrinh/Documents/Playground/mildly-outdoorsy-n8n-workflows/.github/workflows/deploy-n8n.yml)
+- sync script:
+  [ scripts/deploy_workflows_to_n8n.py ](/Users/davidtrinh/Documents/Playground/mildly-outdoorsy-n8n-workflows/scripts/deploy_workflows_to_n8n.py)
+- manifest:
+  [ workflow-manifest.json ](/Users/davidtrinh/Documents/Playground/mildly-outdoorsy-n8n-workflows/workflow-manifest.json)
 
-- low risk
-- infrequent workflow edits
-- keeping human review in the loop
+## How deployment works
 
-### Option B: n8n API-driven sync
+1. Workflow JSON changes are committed and pushed to `main`.
+2. GitHub Actions runs on the self-hosted runner.
+3. The runner calls the live n8n API using:
+   - `N8N_BASE_URL`
+   - `N8N_API_KEY`
+4. Each workflow is resolved by:
+   - `n8n_workflow_id` when present
+   - otherwise exact `live_name`
+5. The live workflow is updated in place and set active/inactive according to the manifest.
 
-Better for automation.
+## What you still need to configure
 
-1. Commit workflow JSON changes to GitHub.
-2. A deploy script or GitHub Action calls the n8n API.
-3. The API updates existing workflows by workflow ID.
+### 1. Install a self-hosted GitHub runner
 
-This is the better path if you want Codex to edit workflow files and have a predictable deployment story.
+Install the runner on the same machine that hosts Docker/n8n.
 
-What is needed:
+GitHub path:
 
-- n8n base URL
-- n8n API key
-- workflow ID mapping for each JSON export
+- repo -> `Settings -> Actions -> Runners -> New self-hosted runner`
 
-## Recommended structure
+Use the default `self-hosted` label unless you want custom labels later.
 
-Keep these values outside version control:
+### 2. Create an n8n API key
 
-- n8n base URL
-- n8n API key
-- Instagram token
-- Supabase credentials
-- Placid credentials
-- fal.ai key
+In the live n8n instance, create an API key and save it in GitHub repo secrets as:
 
-Keep these in version control:
+- `N8N_API_KEY`
 
-- exported workflow JSON files
-- deployment docs
-- workflow manifest
+### 3. Set the live n8n base URL
 
-## Suggested deploy flow
+Add this GitHub repo secret:
 
-1. Edit workflow JSON in GitHub-tracked repo.
-2. Validate JSON shape before deploy.
-3. Push branch.
-4. Merge to `main`.
-5. On the Docker/n8n machine:
-   - pull latest repo
-   - import updated workflow JSONs, or
-   - run a future API sync script
+- `N8N_BASE_URL`
+
+Examples:
+
+- `http://127.0.0.1:5678`
+- `https://your-n8n.example.com`
+
+If the runner is on the same machine as Docker/n8n, `http://127.0.0.1:5678` is usually the cleanest option.
+
+### 4. Fill workflow IDs in the manifest
+
+Open each workflow in n8n and copy the workflow ID into:
+
+[workflow-manifest.json](/Users/davidtrinh/Documents/Playground/mildly-outdoorsy-n8n-workflows/workflow-manifest.json)
+
+The script can resolve by exact `live_name`, but explicit workflow IDs are safer and more stable.
+
+## First-time validation
+
+After the runner and secrets are ready:
+
+1. trigger the GitHub Action manually
+2. it will run a dry run first
+3. then it will sync the live workflows
+
+GitHub path:
+
+- repo -> `Actions -> Deploy n8n workflows -> Run workflow`
 
 ## Important note about credentials
 
-Workflow JSON exports should not be treated as the credential source of truth. Credentials belong in the live n8n instance. After importing workflows into a fresh Docker n8n environment, verify credential bindings for:
+Workflow JSON exports are not the credential source of truth.
+
+Live n8n must already contain working credentials for:
 
 - Supabase
 - Placid
 - Instagram publishing
-- fal.ai / NewsAPI / any HTTP auth nodes
+- fal.ai
+- NewsAPI
 
-## What Codex can realistically manage well
-
-Codex is a strong fit for:
-
-- editing workflow JSON files
-- cleaning broken node wiring
-- updating text prompts and scheduling logic
-- maintaining docs and manifests
-- preparing API-sync scripts
-
-Codex will work best if you provide either:
-
-- access to the GitHub repo plus exported JSON files, or
-- direct access to the Docker host / n8n API
-
-## Recommended next implementation
-
-Create a workflow manifest mapping logical workflow names to filenames and live n8n workflow IDs, then add an import/sync script later.
+This deployment only updates workflows, not credentials.

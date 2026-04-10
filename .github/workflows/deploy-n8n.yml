@@ -1,0 +1,36 @@
+name: Deploy n8n workflows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "*.json"
+      - "workflow-manifest.json"
+      - "scripts/deploy_workflows_to_n8n.py"
+      - ".github/workflows/deploy-n8n.yml"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Dry run workflow resolution
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/deploy_workflows_to_n8n.py --dry-run
+
+      - name: Deploy workflows to n8n
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/deploy_workflows_to_n8n.py

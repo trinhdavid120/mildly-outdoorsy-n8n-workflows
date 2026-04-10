@@ -39,4 +39,19 @@ This `Playground` directory already has a top-level `.git`, so the safest long-t
 
 ## Next deployment step
 
-See [DEPLOYMENT.md](/Users/davidtrinh/Documents/Playground/n8n%20files/DEPLOYMENT.md) for the cleanest GitHub + Docker n8n path.
+See [DEPLOYMENT.md](/Users/davidtrinh/Documents/Playground/mildly-outdoorsy-n8n-workflows/DEPLOYMENT.md) for the self-hosted GitHub Actions + Docker n8n deployment path.
+
+## Deployment status
+
+This repo now includes the scaffolding for:
+
+- self-hosted GitHub Actions deployment
+- n8n API key auth
+- manifest-based workflow mapping
+
+Still required outside this repo:
+
+- install the self-hosted runner on the Docker/n8n machine
+- create the live n8n API key
+- add `N8N_BASE_URL` and `N8N_API_KEY` GitHub secrets
+- fill `n8n_workflow_id` values in [workflow-manifest.json](/Users/davidtrinh/Documents/Playground/mildly-outdoorsy-n8n-workflows/workflow-manifest.json)
