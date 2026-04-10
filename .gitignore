@@ -6,3 +6,11 @@ Thumbs.db
 *.swo
 actions-runner/
 *.tar.gz
+
+# Local secrets — never commit
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key

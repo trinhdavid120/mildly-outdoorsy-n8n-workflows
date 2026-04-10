@@ -32,6 +32,16 @@
               "keyName": "status",
               "condition": "eq",
               "keyValue": "pending"
+            },
+            {
+              "keyName": "content_type",
+              "condition": "eq",
+              "keyValue": "product_carousel"
+            },
+            {
+              "keyName": "shirt_name",
+              "condition": "neq",
+              "keyValue": "newsapi"
             }
           ]
         }
@@ -39,7 +49,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        432,
+        880,
         -1264
       ],
       "id": "88e77885-82f4-4236-a584-0d8db7a91d9d",
@@ -58,7 +68,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        656,
+        1328,
         -1264
       ],
       "id": "c752bc1a-6a67-41eb-bf7d-24a05c7107a5",
@@ -92,7 +102,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        880,
+        1552,
         -1264
       ],
       "id": "32000dad-59a2-4210-88c4-accd0880ff46",
@@ -112,7 +122,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1104,
+        1776,
         -1360
       ],
       "id": "9acb7ab2-d8b5-45a8-808b-95849cbee632",
@@ -131,41 +141,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1328,
+        2000,
         -1360
       ],
       "id": "f22d43c3-5cd0-47a1-9eb7-e50d13c63a17",
       "name": "Code in JavaScript6"
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "product_images",
-        "limit": 1,
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "shirt_name",
-              "condition": "eq",
-              "keyValue": "={{ $json.shirt_name }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1552,
-        -1360
-      ],
-      "id": "455506df-b10e-4327-83a8-2c1f3c578dfc",
-      "name": "Get many rows4",
-      "credentials": {
-        "supabaseApi": {
-          "id": "yEOFcjOD4EJoFmWl",
-          "name": "Supabase account"
-        }
-      }
     },
     {
       "parameters": {
@@ -174,7 +154,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1776,
+        2224,
         -1360
       ],
       "id": "ace6aa4f-420f-4032-9915-83cabe988271",
@@ -187,7 +167,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1328,
+        2000,
         -1168
       ],
       "id": "8c6a4aff-85b0-4883-add7-2efae12f8bbc",
@@ -211,7 +191,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1552,
+        2224,
         -1168
       ],
       "id": "c923fd24-203d-4e9a-9c10-051ad3be29da",
@@ -221,7 +201,8 @@
           "id": "yEOFcjOD4EJoFmWl",
           "name": "Supabase account"
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -230,7 +211,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1776,
+        2448,
         -1168
       ],
       "id": "b939c6a2-d738-4673-8b1c-8829b5df8417",
@@ -241,7 +222,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2000,
+        2672,
         -1264
       ],
       "id": "e14cca62-81a4-4527-ac99-cb3bf111f509",
@@ -261,7 +242,7 @@
       "type": "n8n-nodes-base.sort",
       "typeVersion": 1,
       "position": [
-        2224,
+        2896,
         -1264
       ],
       "id": "0539eaf6-7e60-4ca7-8f1e-11a36c676791",
@@ -284,7 +265,7 @@
       "type": "n8n-nodes-placid.placid",
       "typeVersion": 1,
       "position": [
-        2448,
+        3120,
         -1264
       ],
       "id": "6ca6f43d-5699-417b-8469-d0566604f1ad",
@@ -303,7 +284,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2672,
+        3344,
         -1264
       ],
       "id": "2dae3e8c-9bb6-45fb-94a5-e2dea7a2d9c3",
@@ -320,7 +301,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        2896,
+        3568,
         -1264
       ],
       "id": "3f91fd9d-5438-4ecb-a872-f5601850f0ed",
@@ -342,7 +323,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3120,
+        3792,
         -1264
       ],
       "id": "60e55360-a9dc-471a-8a4b-24dc2bb386e5",
@@ -359,7 +340,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        3344,
+        4016,
         -1264
       ],
       "id": "5a73b51b-f669-4795-ba03-a9a9b3a2f55d",
@@ -381,7 +362,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3568,
+        4240,
         -1264
       ],
       "id": "fa1146a4-67c7-4a05-a9ea-77ecf48b69ce",
@@ -398,7 +379,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        3792,
+        4464,
         -1264
       ],
       "id": "40a0f0b2-8c8b-42a1-8cf7-3e69d8f1df56",
@@ -446,7 +427,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        4240,
+        4912,
         -1264
       ],
       "id": "053e6498-668a-4229-b7ef-a3777ee1284a",
@@ -465,11 +446,118 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4016,
+        4688,
         -1264
       ],
       "id": "e78f521f-d3d5-4b68-bf25-3a2bb86e460c",
       "name": "Prepare Publish Result1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "carousel_queue",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "processing"
+            },
+            {
+              "keyName": "content_type",
+              "condition": "eq",
+              "keyValue": "product_carousel"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -1264
+      ],
+      "id": "943fc6dd-a7f4-4c0e-95c4-02adec82c4ff",
+      "name": "Check In-Progress",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "18291af9-ddc2-4319-9bcf-03555545ea4d",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        656,
+        -1264
+      ],
+      "id": "9d88b8bc-284a-43e4-b96a-14204eb98cbb",
+      "name": "If Has In-Progress"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "carousel_queue",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "processing"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        -1264
+      ],
+      "id": "794db944-6f0b-4b36-a147-a67d52eaec4c",
+      "name": "Claim Row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -478,7 +566,7 @@
       "main": [
         [
           {
-            "node": "Get many rows3",
+            "node": "Check In-Progress",
             "type": "main",
             "index": 0
           }
@@ -489,7 +577,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript5",
+            "node": "Claim Row",
             "type": "main",
             "index": 0
           }
@@ -537,17 +625,6 @@
       ]
     },
     "Code in JavaScript6": {
-      "main": [
-        [
-          {
-            "node": "Get many rows4",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get many rows4": {
       "main": [
         [
           {
@@ -706,6 +783,40 @@
         [
           {
             "node": "Mark Queue Row Published1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check In-Progress": {
+      "main": [
+        [
+          {
+            "node": "If Has In-Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has In-Progress": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get many rows3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Row": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
             "type": "main",
             "index": 0
           }
