@@ -14,9 +14,18 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
+    env:
+      HOME: /Users/davidtrinh
+      RUNNER_TEMP: /Users/davidtrinh/actions-runner/_work/_temp
+      RUNNER_TOOL_CACHE: /Users/davidtrinh/actions-runner/_work/_tool
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Prepare runner directories
+        run: |
+          mkdir -p "$RUNNER_TEMP"
+          mkdir -p "$RUNNER_TOOL_CACHE"
 
       - name: Set up Python
         uses: actions/setup-python@v5
