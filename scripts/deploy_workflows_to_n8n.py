@@ -118,7 +118,8 @@ def build_payload(
     payload = dict(export_json)
     payload.pop("id", None)
     payload.pop("active", None)
-    for field in ("versionId", "tags", "settings", "staticData", "parentFolderId"):
+    payload.pop("versionId", None)
+    for field in ("tags", "settings", "staticData", "parentFolderId"):
         if field not in payload and field in existing_workflow:
             payload[field] = existing_workflow[field]
     return payload
