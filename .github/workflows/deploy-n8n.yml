@@ -26,6 +26,12 @@ jobs:
       - name: Confirm Python is available
         run: python3 --version
 
+      - name: Audit credential references
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/deploy_workflows_to_n8n.py --check-credentials
+
       - name: Dry run workflow resolution
         env:
           N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}

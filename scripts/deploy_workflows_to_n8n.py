@@ -144,10 +144,80 @@ def build_payload(
     return payload
 
 
+def collect_credential_references(
+    workflow_label: str, export_json: Dict[str, Any]
+) -> List[Tuple[str, str, str, str, str]]:
+    """Return (workflow_label, node_name, cred_type, cred_id, cred_name) tuples."""
+    refs: List[Tuple[str, str, str, str, str]] = []
+    for node in export_json.get("nodes", []):
+        creds = node.get("credentials") or {}
+        node_name = node.get("name", "<unnamed>")
+        for cred_type, ref in creds.items():
+            if not isinstance(ref, dict):
+                continue
+            refs.append(
+                (
+                    workflow_label,
+                    node_name,
+                    cred_type,
+                    str(ref.get("id", "")),
+                    str(ref.get("name", "")),
+                )
+            )
+    return refs
+
+
+def report_credential_references(
+    all_refs: List[Tuple[str, str, str, str, str]],
+) -> int:
+    """Print a grouped report. Return non-zero if drift was detected."""
+    if not all_refs:
+        print("[creds] no credential references found")
+        return 0
+
+    by_key: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    for workflow_label, node_name, cred_type, cred_id, cred_name in all_refs:
+        key = (cred_type, cred_id)
+        entry = by_key.setdefault(
+            key, {"names": set(), "usages": []}
+        )
+        entry["names"].add(cred_name)
+        entry["usages"].append((workflow_label, node_name))
+
+    print("[creds] credential references found in deployed workflows:")
+    drift = 0
+    for (cred_type, cred_id), entry in sorted(by_key.items()):
+        names = sorted(entry["names"])
+        name_display = names[0] if len(names) == 1 else f"{names} (DRIFT)"
+        if len(names) > 1:
+            drift += 1
+        print(f"  - {cred_type} id={cred_id} name={name_display}")
+        for workflow_label, node_name in entry["usages"]:
+            print(f"      used by: {workflow_label} :: {node_name}")
+
+    if drift:
+        print(
+            f"[creds] WARNING: {drift} credential id(s) referenced under multiple "
+            "names — likely stale exports or a renamed credential. "
+            "Re-export the affected workflows from n8n and commit."
+        )
+    print(
+        "[creds] note: n8n public API has no list-credentials endpoint, so "
+        "this report only checks references inside the workflow JSON. "
+        "Confirm in n8n UI that each id above still exists."
+    )
+    return drift
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", default="workflow-manifest.json")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--check-credentials",
+        action="store_true",
+        help="Only print the credential reference report; do not deploy.",
+    )
     args = parser.parse_args()
 
     base_url = os.environ.get("N8N_BASE_URL")
@@ -165,8 +235,22 @@ def main() -> None:
     if not workflows:
         fail("No workflows found in manifest")
 
+    if args.check_credentials:
+        all_refs: List[Tuple[str, str, str, str, str]] = []
+        for workflow in workflows:
+            export_path = repo_root / workflow["file"]
+            if not export_path.exists():
+                fail(f"Missing workflow export: {export_path}")
+            export_json = load_json(export_path)
+            all_refs.extend(
+                collect_credential_references(workflow["name"], export_json)
+            )
+        drift = report_credential_references(all_refs)
+        raise SystemExit(1 if drift else 0)
+
     client = N8NClient(base_url=base_url, api_key=api_key)
 
+    all_refs: List[Tuple[str, str, str, str, str]] = []
     for workflow in workflows:
         export_path = repo_root / workflow["file"]
         if not export_path.exists():
@@ -181,6 +265,7 @@ def main() -> None:
 
         resolved_id, existing = resolve_live_workflow(client, workflow_id, live_name)
         print(f"[resolve] {workflow['name']} -> {resolved_id} ({live_name})")
+        all_refs.extend(collect_credential_references(workflow["name"], export_json))
         if args.dry_run:
             continue
 
@@ -192,6 +277,8 @@ def main() -> None:
         client.update_workflow(resolved_id, payload)
         client.set_workflow_active(resolved_id, activate_after_sync)
         print(f"[update] synced {workflow['file']}")
+
+    report_credential_references(all_refs)
 
 
 if __name__ == "__main__":
