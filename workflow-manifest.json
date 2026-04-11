@@ -44,6 +44,14 @@
       "n8n_workflow_id": "jOlZLRLnPCa03ppH",
       "activate_after_sync": true,
       "purpose": "Shared single-image Instagram publisher"
+    },
+    {
+      "name": "news_card_pipeline",
+      "file": "Mildly Outdoorsy - News Card Pipeline - SAFE #6.json",
+      "live_name": "Mildly Outdoorsy - News Card Pipeline - SAFE #6",
+      "n8n_workflow_id": "SBE2CO4MUYk82PUn",
+      "activate_after_sync": true,
+      "purpose": "Consume news_card_queue, render 4 slides via fal img2img + Placid, hand off to Shared IG Publisher"
     }
   ]
 }

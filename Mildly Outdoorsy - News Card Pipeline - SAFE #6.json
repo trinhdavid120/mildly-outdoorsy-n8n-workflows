@@ -1,0 +1,650 @@
+{
+  "name": "Mildly Outdoorsy - News Card Pipeline - SAFE #6",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6,9,12,15,18,21 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "551dee23-b028-409a-ba2a-a85a3f971cd6",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "news_card_queue",
+        "limit": 10,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "pending"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ],
+      "id": "9b5b4dc4-3992-4f3c-a1cb-215cdd01226b",
+      "name": "Get Pending Rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 — Pick Oldest\n// Pulls the oldest pending row out of the limit-N batch returned by\n// Get Pending Rows. Throws if zero — n8n's default behavior turns that\n// into a clean error in the run log, which is exactly what we want\n// because it means the queue is empty and there's nothing to do.\nconst rows = $input.all().map((i) => i.json);\nif (rows.length === 0) {\n  // Returning [] gracefully ends the run without an error in the log.\n  return [];\n}\nconst parse = (v) => Date.parse(v || '') || 0;\nrows.sort((a, b) => parse(a.created_at) - parse(b.created_at));\nreturn [{ json: rows[0] }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "a4a7f044-f392-4f61-aff0-be47c6273ffe",
+      "name": "Pick Oldest"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "news_card_queue",
+        "limit": 5,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "processing"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        720,
+        0
+      ],
+      "id": "f8b13edf-cbdf-4744-8faf-b8ac9514ffab",
+      "name": "Check In-Progress",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "in-progress-check",
+              "leftValue": "={{ $('Check In-Progress').all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ],
+      "id": "165c217f-edb7-4df8-8f40-dd5bdd9446ec",
+      "name": "If Has In-Progress"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "news_card_queue",
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Pick Oldest').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "processing"
+            },
+            {
+              "fieldId": "processing_started_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "d4eb9dcf-1174-4313-a1d3-f8f73788e820",
+      "name": "Claim Row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 — Decide Cache\n// Reads the row pulled by Pick Oldest. If last_generated_image_urls is\n// populated AND last_generated_at is within CACHE_TTL_HOURS, we treat the\n// previous fal output as still good and skip the fal calls entirely.\n// This is the cost-control mechanism for retry-after-mid-pipeline-fail.\n//\n// The Phase 2.5 requeue helper (scripts/migrations/\n// 2026_04_11_phase2_5_requeue_helper.sql) wipes both columns whenever a\n// row is requeued, so explicit user-initiated requeues always force a\n// fresh generation. That's intentional: the only reason to requeue is\n// dissatisfaction with the previous output.\nconst row = $('Pick Oldest').first().json;\nconst TTL_MS = 24 * 60 * 60 * 1000;\n\nlet cachedUrls = row.last_generated_image_urls;\nif (typeof cachedUrls === 'string') {\n  // Defensive: jsonb sometimes round-trips as string.\n  try { cachedUrls = JSON.parse(cachedUrls); } catch (e) { cachedUrls = null; }\n}\nconst cachedAt = row.last_generated_at\n  ? new Date(row.last_generated_at).getTime()\n  : 0;\nconst fresh = cachedAt > 0 && (Date.now() - cachedAt) < TTL_MS;\nconst valid = Array.isArray(cachedUrls) && cachedUrls.length === 3\n  && cachedUrls.every((u) => typeof u === 'string' && u.length > 0);\n\nif (fresh && valid) {\n  return [{\n    json: {\n      cache_hit: true,\n      fal_urls: cachedUrls,\n      cache_age_seconds: Math.round((Date.now() - cachedAt) / 1000),\n    },\n  }];\n}\nreturn [{ json: { cache_hit: false } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        0
+      ],
+      "id": "d9e1ceef-a8ae-41cd-8d73-14330dcf5d8c",
+      "name": "Decide Cache"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cache-hit-check",
+              "leftValue": "={{ $json.cache_hit }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ],
+      "id": "8b2d3b1b-13a8-4b0b-a130-a021a82cf1d2",
+      "name": "If Cache Hit"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 — Build Fal Items\n// Fans out three items (one per slide 2/3/4) so the Generate Fal Image\n// HTTP node iterates and produces three independent fal calls. Each item\n// carries the slide index, the prompt, and the source image url that\n// becomes the img2img reference.\nconst row = $('Pick Oldest').first().json;\nconst out = [];\nfor (const idx of [2, 3, 4]) {\n  out.push({\n    json: {\n      slide: idx,\n      slide_text: row['slide_' + idx + '_text'] || '',\n      fal_prompt: row['slide_' + idx + '_fal_prompt'] || '',\n      reference_image_url: row.source_image_url,\n      record_id: row.id,\n    },\n  });\n}\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        220
+      ],
+      "id": "8050fcd1-f0b7-45b7-92ab-1e7bdab4e2ff",
+      "name": "Build Fal Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/flux-pro/kontext/max",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.fal_prompt }}\",\n  \"image_url\": \"{{ $json.reference_image_url }}\",\n  \"negative_prompt\": \"text, watermark, logo, words, letters, caption, brand name, UI elements, app interface, phone screen, chinese characters, overlay, signature, different person, different art style, distorted face\",\n  \"image_size\": \"square_hd\",\n  \"num_images\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2160,
+        220
+      ],
+      "id": "9d44f48e-bec3-4d21-bb7f-3418d615240e",
+      "name": "Generate Fal Image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TrFedQ8VlGnEkofb",
+          "name": "Header Auth account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 — Extract Fal URL\n// fal returns { images: [ { url, content_type, width, height }, ... ] }.\n// We always request num_images=1 so we just take images[0].url. If the\n// shape is missing we throw — better to surface the broken response in\n// the execution log than to silently push a placeholder url to Placid.\nconst j = $input.first().json;\nconst url = j && j.images && j.images[0] && j.images[0].url;\nif (!url) {\n  throw new Error('Fal response missing images[0].url: ' + JSON.stringify(j).slice(0, 500));\n}\n// Re-attach the slide context from Build Fal Items so the next node\n// (Aggregate Fal URLs) can sort by slide index.\nconst ctx = $('Build Fal Items').itemMatching($itemIndex).json;\nreturn [{\n  json: {\n    slide: ctx.slide,\n    fal_image_url: url,\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        220
+      ],
+      "id": "0ef274a9-40a2-429f-9e03-ea9df32bc4f5",
+      "name": "Extract Fal URL"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 — Aggregate Fal URLs\n// Collects the 3 per-slide items into one item with an ordered fal_urls\n// array. The order matters because Cache Generated URLs writes it back\n// to last_generated_image_urls, and Build Render Items reads it back by\n// index when fanning out the Placid render items.\nconst items = $input.all().map((i) => i.json);\nitems.sort((a, b) => a.slide - b.slide);\nconst fal_urls = items.map((i) => i.fal_image_url);\nconst row = $('Pick Oldest').first().json;\nreturn [{\n  json: {\n    record_id: row.id,\n    fal_urls,                          // ordered [slide2, slide3, slide4]\n    cache_hit: false,                  // explicit so the merged stream is uniform\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        220
+      ],
+      "id": "d3bdd80e-bd15-4dc4-a38a-3f2ed940fa68",
+      "name": "Aggregate Fal URLs"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "news_card_queue",
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.record_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "last_generated_image_urls",
+              "fieldValue": "={{ JSON.stringify($json.fal_urls) }}"
+            },
+            {
+              "fieldId": "last_generated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        220
+      ],
+      "id": "9c707396-f902-4dd4-a32a-1069010267ae",
+      "name": "Cache Generated URLs",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3120,
+        0
+      ],
+      "id": "de3d08f0-fa1c-4c2e-9ca5-d19d478996b4",
+      "name": "Merge Cache Branches"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 — Build Render Items\n// Fans out 4 items, one per slide, with the inputs the Render Slide\n// (Placid) node needs:\n//   - image_url   -> bound to the main_image layer\n//   - headline_text -> bound to the headline_text layer\n//\n// Slide 1 uses source_image_url unchanged with the article headline.\n// Slides 2-4 use the fal-generated images with their respective slide\n// body text.\n//\n// Reads from two upstream nodes:\n//   - $('Pick Oldest')         for the row context (always)\n//   - $input                   for { fal_urls } from either branch of\n//                              the cache-hit / cache-miss merge\nconst row = $('Pick Oldest').first().json;\nconst upstream = $input.first().json;\nconst fal_urls = upstream.fal_urls || [];\n\nif (!Array.isArray(fal_urls) || fal_urls.length !== 3) {\n  throw new Error(\n    'Build Render Items: expected fal_urls of length 3, got ' +\n    JSON.stringify(fal_urls)\n  );\n}\n\nreturn [\n  {\n    json: {\n      slide: 1,\n      record_id: row.id,\n      image_url: row.source_image_url,\n      headline_text: String(row.headline_text || '').slice(0, 220),\n    },\n  },\n  {\n    json: {\n      slide: 2,\n      record_id: row.id,\n      image_url: fal_urls[0],\n      headline_text: String(row.slide_2_text || '').slice(0, 220),\n    },\n  },\n  {\n    json: {\n      slide: 3,\n      record_id: row.id,\n      image_url: fal_urls[1],\n      headline_text: String(row.slide_3_text || '').slice(0, 220),\n    },\n  },\n  {\n    json: {\n      slide: 4,\n      record_id: row.id,\n      image_url: fal_urls[2],\n      headline_text: String(row.slide_4_text || '').slice(0, 220),\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        0
+      ],
+      "id": "e9db8f8e-c0ac-4b11-b13d-761b597df302",
+      "name": "Build Render Items"
+    },
+    {
+      "parameters": {
+        "template_id": {
+          "__rl": true,
+          "value": "bazsa46k83jxi",
+          "mode": "id"
+        },
+        "configurationMode": "advanced",
+        "layers": {
+          "layerItems": []
+        },
+        "layersJson": "={\n  \"headline_text\": { \"text\": \"{{ $json.headline_text }}\" },\n  \"main_image\":    { \"image\": \"{{ $json.image_url }}\" },\n  \"background_color\": { \"fill\": \"#F3F3F3\" }\n}"
+      },
+      "type": "n8n-nodes-placid.placid",
+      "typeVersion": 1,
+      "position": [
+        3600,
+        0
+      ],
+      "id": "bef2c0a9-0c6d-42a2-9e48-be59718fc91e",
+      "name": "Render Slide",
+      "credentials": {
+        "placidApi": {
+          "id": "82azTmxGonZRiIaA",
+          "name": "Placid account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 — Aggregate Final URLs\n// Collects the 4 Placid-rendered images back into one item with an\n// ordered image_urls array. Placid responses vary slightly across\n// versions; we look in a few likely places before failing loudly.\nconst items = $input.all().map((i, idx) => {\n  const j = i.json || {};\n  const url =\n    j.image_url ||\n    j.url ||\n    j.public_url ||\n    (j.image && j.image.url) ||\n    (j.data && (j.data.image_url || j.data.url));\n  if (!url) {\n    throw new Error(\n      'Render Slide item ' + idx + ' has no recognized url field: ' +\n      JSON.stringify(j).slice(0, 400)\n    );\n  }\n  // Recover slide index from the matching upstream item so we can sort.\n  const ctx = $('Build Render Items').itemMatching(idx).json;\n  return { slide: ctx.slide, url };\n});\nitems.sort((a, b) => a.slide - b.slide);\nconst image_urls = items.map((i) => i.url);\nconst row = $('Pick Oldest').first().json;\nreturn [{\n  json: {\n    record_id: row.id,\n    image_urls,                        // ordered [slide1, slide2, slide3, slide4]\n    caption: row.caption || '',\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        0
+      ],
+      "id": "2ec8bbd0-7658-4dbd-b04e-2b2d58681825",
+      "name": "Aggregate Final URLs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 — Build Publish Payload\n// Emits exactly the contract that Shared IG Publisher's Validate Input\n// node expects:\n//   { queue_table, record_id, caption, image_urls }\n// Defined in scripts/migrations/2026_04_11_phase2_shared_ig_publisher_rewrite.py.\nconst j = $input.first().json;\nreturn [{\n  json: {\n    queue_table: 'news_card_queue',\n    record_id: j.record_id,\n    caption: j.caption || '',\n    image_urls: j.image_urls,\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        0
+      ],
+      "id": "e62f0d01-6eca-44aa-8f98-60a6602bdd5d",
+      "name": "Build Publish Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/mildly-ig-publisher-safe-6",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4320,
+        0
+      ],
+      "id": "e9911699-b53b-4384-af77-75c38645cc6e",
+      "name": "Call Shared IG Publisher"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Rows": {
+      "main": [
+        [
+          {
+            "node": "Pick Oldest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Oldest": {
+      "main": [
+        [
+          {
+            "node": "Check In-Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check In-Progress": {
+      "main": [
+        [
+          {
+            "node": "If Has In-Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has In-Progress": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Claim Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Row": {
+      "main": [
+        [
+          {
+            "node": "Decide Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide Cache": {
+      "main": [
+        [
+          {
+            "node": "If Cache Hit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Cache Hit": {
+      "main": [
+        [
+          {
+            "node": "Merge Cache Branches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Fal Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Fal Items": {
+      "main": [
+        [
+          {
+            "node": "Generate Fal Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Fal Image": {
+      "main": [
+        [
+          {
+            "node": "Extract Fal URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Fal URL": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Fal URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Fal URLs": {
+      "main": [
+        [
+          {
+            "node": "Cache Generated URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache Generated URLs": {
+      "main": [
+        [
+          {
+            "node": "Merge Cache Branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Cache Branches": {
+      "main": [
+        [
+          {
+            "node": "Build Render Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Render Items": {
+      "main": [
+        [
+          {
+            "node": "Render Slide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Slide": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Final URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Final URLs": {
+      "main": [
+        [
+          {
+            "node": "Build Publish Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Publish Payload": {
+      "main": [
+        [
+          {
+            "node": "Call Shared IG Publisher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Los_Angeles"
+  },
+  "id": "SBE2CO4MUYk82PUn"
+}
