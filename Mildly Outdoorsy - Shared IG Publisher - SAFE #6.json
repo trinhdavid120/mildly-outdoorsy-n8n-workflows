@@ -14,27 +14,212 @@
         0,
         0
       ],
-      "id": "148a5676-3ed1-42d6-a8e0-35c9b3098d06",
+      "id": "3b9a3cab-c392-4c3c-807e-e3d6d3226089",
       "name": "Webhook",
       "webhookId": "2388c09e-c71b-4fd2-a240-2f367a8ade5d"
     },
     {
       "parameters": {
-        "jsCode": "const b=$input.first().json.body || $input.first().json;\nconst imageUrl=b.image_url || b.instagram_image_url;\nif(!imageUrl) throw new Error('Missing image_url');\nreturn [{json:{record_id:b.record_id,queue_table:b.queue_table || 'carousel_queue',caption:b.caption || b.instagram_caption || '',image_url:imageUrl}}];"
+        "jsCode": "// Shared IG Publisher — Validate Input\n// Accepts: { queue_table, record_id, caption, image_urls: string[] }\n// Emits ONE item with the full payload. Splitting into one-item-per-image\n// happens later (after preflight), so the rate-limit checks run exactly once.\nconst raw = $input.first().json || {};\nconst body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\n\nconst queue_table = body.queue_table;\nconst record_id = body.record_id;\nconst caption = body.caption || '';\nlet image_urls = body.image_urls;\n\nif (!queue_table) throw new Error('Missing queue_table');\nif (!record_id) throw new Error('Missing record_id');\nif (image_urls == null) throw new Error('Missing image_urls');\n\nif (typeof image_urls === 'string') {\n  // Defensive: allow a JSON-encoded array or a CSV fallback.\n  try {\n    const parsed = JSON.parse(image_urls);\n    image_urls = Array.isArray(parsed) ? parsed : image_urls.split(',');\n  } catch (e) {\n    image_urls = image_urls.split(',');\n  }\n}\nif (!Array.isArray(image_urls)) throw new Error('image_urls must be an array');\n\nimage_urls = image_urls\n  .map((u) => (typeof u === 'string' ? u.trim() : ''))\n  .filter((u) => u.length > 0);\nif (image_urls.length === 0) throw new Error('image_urls is empty');\nif (image_urls.length > 10) {\n  throw new Error('Instagram carousels support at most 10 images');\n}\n\nreturn [{\n  json: {\n    queue_table,\n    record_id,\n    caption,\n    image_urls,\n    total: image_urls.length,\n  },\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        224,
+        240,
         0
       ],
-      "id": "790e2f61-cdd6-4b1b-b8c2-6df855f08c27",
-      "name": "Normalize Input"
+      "id": "6702dad7-dbd7-4c34-8cca-3c4769e1de1d",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "={{ $json.queue_table }}",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.record_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        480,
+        0
+      ],
+      "id": "3b19c75e-1ada-4836-93b5-93d555e94021",
+      "name": "Get Current Row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "all_published_posts",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "published_at",
+              "condition": "gte",
+              "keyValue": "={{ new Date(Date.now() - 300 * 1000).toISOString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        720,
+        0
+      ],
+      "id": "9f380853-e103-44be-ac1a-8af4fce24ebc",
+      "name": "Check Cooldown Count",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "all_published_posts",
+        "limit": 6,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "published_at",
+              "condition": "gte",
+              "keyValue": "={{ new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        960,
+        0
+      ],
+      "id": "49287439-5027-4d75-a12e-a1afebda5c0f",
+      "name": "Check Daily Cap Count",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Shared IG Publisher — Evaluate Preflight\n// Reads Validate Input, Get Current Row, Check Cooldown Count, and\n// Check Daily Cap Count to decide whether this publish attempt should be\n// allowed, short-circuited (already published), or rate-limited (refused).\n// Runs once regardless of how many rows the upstream count queries returned.\nconst COOLDOWN_SECONDS = 300;  // Layer 2 window\nconst DAILY_CAP        = 6; // Layer 3 max publishes per 24h\n\nconst src = $('Validate Input').first().json;\n\nconst getRowItems = $('Get Current Row').all();\nconst currentRow = (getRowItems.length > 0 && getRowItems[0].json) || {};\n\n// --- Layer 1: idempotency — record already published ---\nif (currentRow && currentRow.id &&\n    currentRow.status === 'published' &&\n    currentRow.instagram_post_id) {\n  return [{\n    json: {\n      state: 'short_circuit',\n      queue_table: src.queue_table,\n      record_id: src.record_id,\n      instagram_post_id: currentRow.instagram_post_id,\n      published_at: currentRow.published_at,\n      reason: 'already_published',\n    },\n  }];\n}\n\n// --- Sanity: row must exist to be publishable ---\nif (!currentRow || !currentRow.id) {\n  throw new Error(\n    'Record not found: queue_table=' + src.queue_table +\n    ' record_id=' + src.record_id\n  );\n}\n\n// --- Layer 2: rolling cooldown ---\nconst cooldownRows = $('Check Cooldown Count').all()\n  .map(r => r && r.json)\n  .filter(j => j && j.published_at);\nif (cooldownRows.length > 0) {\n  // Take the most recent published_at across the returned rows.\n  const mostRecentMs = cooldownRows\n    .map(j => new Date(j.published_at).getTime())\n    .sort((a, b) => b - a)[0];\n  const secondsSince = Math.max(0, Math.round((Date.now() - mostRecentMs) / 1000));\n  return [{\n    json: {\n      state: 'rate_limited',\n      queue_table: src.queue_table,\n      record_id: src.record_id,\n      reason: 'cooldown: last publish ' + secondsSince + 's ago (min ' + COOLDOWN_SECONDS + 's)',\n      cooldown_seconds: COOLDOWN_SECONDS,\n      seconds_since_last: secondsSince,\n    },\n  }];\n}\n\n// --- Layer 3: daily hard cap ---\nconst dailyRows = $('Check Daily Cap Count').all()\n  .map(r => r && r.json)\n  .filter(j => j && j.published_at);\nif (dailyRows.length >= DAILY_CAP) {\n  return [{\n    json: {\n      state: 'rate_limited',\n      queue_table: src.queue_table,\n      record_id: src.record_id,\n      reason: 'daily cap: ' + dailyRows.length + ' publishes in last 24h (max ' + DAILY_CAP + ')',\n      daily_cap: DAILY_CAP,\n      count_last_24h: dailyRows.length,\n    },\n  }];\n}\n\n// --- All clear — carry the payload forward for Split Image URLs ---\nreturn [{\n  json: {\n    state: 'allowed',\n    queue_table: src.queue_table,\n    record_id: src.record_id,\n    caption: src.caption,\n    image_urls: src.image_urls,\n    total: src.total,\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "c88dd5f7-794c-49a0-9820-5516b8279592",
+      "name": "Evaluate Preflight"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0d29020d-b493-42e7-8034-1a80a04ab4dd",
+              "leftValue": "={{ $json.state }}",
+              "rightValue": "short_circuit",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        0
+      ],
+      "id": "7ba4936f-9195-4542-901e-3ecc8f0869a3",
+      "name": "If Already Published"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "60403e69-c8e5-4d5a-ae7d-1e6bde7ccabb",
+              "leftValue": "={{ $json.state }}",
+              "rightValue": "rate_limited",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ],
+      "id": "c4c169dd-70a2-4853-a3dd-69e833176bc4",
+      "name": "If Rate Limited"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Shared IG Publisher — Split Image URLs\n// Called only on the \"allowed\" branch. Emits one item per image_url so the\n// downstream Instagram Create Child Container HTTP node runs once per slide.\nconst src = $input.first().json;\nif (!Array.isArray(src.image_urls) || src.image_urls.length === 0) {\n  throw new Error('Split Image URLs: image_urls missing or empty');\n}\nreturn src.image_urls.map((image_url, idx) => ({\n  json: {\n    queue_table: src.queue_table,\n    record_id: src.record_id,\n    caption: src.caption,\n    image_url,\n    idx,\n    total: src.total,\n  },\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        0
+      ],
+      "id": "4134f3d7-5d2d-4884-8dd5-132dbd5794c4",
+      "name": "Split Image URLs"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'https://graph.facebook.com/v24.0/17841434331048402/media?image_url=' + encodeURIComponent($json.image_url) + '&caption=' + encodeURIComponent($json.caption || '') }}",
+        "url": "={{ 'https://graph.facebook.com/v24.0/17841434331048402/media?is_carousel_item=true&image_url=' + encodeURIComponent($json.image_url) }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpQueryAuth",
         "options": {}
@@ -42,35 +227,40 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        448,
+        2160,
         0
       ],
-      "id": "c6528eb7-82d8-47f7-8c32-50e32ed62ed4",
-      "name": "Instagram Create Image Container",
+      "id": "54d105c3-9ede-4de5-98b2-9bd438f4f6f1",
+      "name": "Instagram Create Child Container",
       "credentials": {
         "httpQueryAuth": {
           "id": "FhYSJdoGK10NqgIX",
           "name": "Instagram Query Auth"
         }
-      }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
-        "jsCode": "const res=$input.first().json; const src=$('Normalize Input').first().json; if(!res.id) throw new Error('No creation id from Instagram'); return [{json:{...src,instagram_creation_id:res.id}}];"
+        "jsCode": "// Shared IG Publisher — Aggregate Child Containers\n// Runs once. Receives merged items from both outputs of \"Instagram Create\n// Child Container\" (success + error), so partial failures show up here and\n// we can throw atomically rather than publishing a carousel with missing\n// slides.\nconst items = $input.all();\nconst src = $('Validate Input').first().json;\nconst expected = Number(src.total || items.length);\n\nconst ids = [];\nconst errors = [];\nfor (const item of items) {\n  const j = item.json || {};\n  if (j.error) {\n    const msg = typeof j.error === 'string'\n      ? j.error\n      : (j.error.message || JSON.stringify(j.error));\n    errors.push(msg);\n    continue;\n  }\n  if (j.id) {\n    ids.push(String(j.id));\n  } else {\n    errors.push('Child container response missing id: ' + JSON.stringify(j).slice(0, 200));\n  }\n}\n\nif (errors.length > 0 || ids.length !== expected) {\n  const reason = errors.length > 0\n    ? errors.join(' | ')\n    : ('Expected ' + expected + ' child containers, got ' + ids.length);\n  throw new Error('Child container creation failed: ' + reason);\n}\n\nreturn [{\n  json: {\n    queue_table: src.queue_table,\n    record_id: src.record_id,\n    caption: src.caption,\n    children_csv: ids.join(','),\n    child_count: ids.length,\n  },\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
+        2400,
         0
       ],
-      "id": "f4ce5a5f-5994-497e-add0-9eec16512bec",
-      "name": "Prepare Publish"
+      "id": "db17d05d-30b7-4069-94a2-e2032e157722",
+      "name": "Aggregate Child Containers",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'https://graph.facebook.com/v24.0/17841434331048402/media_publish?creation_id=' + encodeURIComponent($json.instagram_creation_id) }}",
+        "url": "={{ 'https://graph.facebook.com/v24.0/17841434331048402/media?media_type=CAROUSEL&children=' + encodeURIComponent($json.children_csv) + '&caption=' + encodeURIComponent($json.caption || '') }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpQueryAuth",
         "options": {}
@@ -78,30 +268,61 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        880,
+        2640,
         0
       ],
-      "id": "82953d07-c05a-4a22-a789-8902c373d4b6",
-      "name": "Instagram Publish Image",
+      "id": "bc15790d-a74d-4450-96ce-ff9dd1c9ff04",
+      "name": "Instagram Create Carousel Container",
       "credentials": {
         "httpQueryAuth": {
           "id": "FhYSJdoGK10NqgIX",
           "name": "Instagram Query Auth"
         }
-      }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
-        "jsCode": "const pub=$input.first().json; const src=$('Prepare Publish').first().json; return [{json:{record_id:src.record_id,queue_table:src.queue_table,instagram_post_id:pub.id,published_at:new Date().toISOString(),status:'published'}}];"
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v24.0/17841434331048402/media_publish?creation_id=' + encodeURIComponent($json.id) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2880,
+        0
+      ],
+      "id": "51f15bad-b0f2-402f-bfee-4f0739560d23",
+      "name": "Instagram Publish Carousel",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "FhYSJdoGK10NqgIX",
+          "name": "Instagram Query Auth"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Shared IG Publisher — Prepare Success Update\n// Rolls the Publish response + Aggregate context into a single item whose\n// fields map 1:1 to the Supabase update node's filter + fieldValues.\nconst pub = $input.first().json || {};\nconst src = $('Aggregate Child Containers').first().json;\nif (!pub.id) throw new Error('Publish response missing id');\nreturn [{\n  json: {\n    queue_table: src.queue_table,\n    record_id: src.record_id,\n    instagram_post_id: String(pub.id),\n    published_at: new Date().toISOString(),\n    status: 'published',\n  },\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1104,
+        3120,
         0
       ],
-      "id": "5cbd9e92-b702-4593-838e-7ae2a77be8c2",
-      "name": "Prepare DB Update"
+      "id": "88d76cfd-baf4-415d-b0c4-c3e8448cdad6",
+      "name": "Prepare Success Update"
     },
     {
       "parameters": {
@@ -136,32 +357,159 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1328,
+        3360,
         0
       ],
-      "id": "bce46194-43d8-413e-bf28-63374be60e45",
+      "id": "4323c81a-6321-4e23-ac4d-f5f8d3ea2cbe",
       "name": "Mark Queue Row Published",
       "credentials": {
         "supabaseApi": {
           "id": "yEOFcjOD4EJoFmWl",
           "name": "Supabase account"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { ok: true, record_id: $('Prepare DB Update').first().json.record_id, instagram_post_id: $('Prepare DB Update').first().json.instagram_post_id } }}",
+        "responseCode": 200,
+        "responseBody": "={{ { ok: true, record_id: $('Prepare Success Update').first().json.record_id, instagram_post_id: $('Prepare Success Update').first().json.instagram_post_id, published_at: $('Prepare Success Update').first().json.published_at } }}",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        1552,
+        3600,
         0
       ],
-      "id": "9d34a56c-233d-4b66-a341-165d7efbf606",
-      "name": "Respond"
+      "id": "dd4c4c62-18b7-48d2-b99b-da47cb0bbe4a",
+      "name": "Respond Success"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 200,
+        "responseBody": "={{ { ok: true, already_published: true, record_id: $('Evaluate Preflight').first().json.record_id, instagram_post_id: $('Evaluate Preflight').first().json.instagram_post_id, published_at: $('Evaluate Preflight').first().json.published_at } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        -256
+      ],
+      "id": "1a4cd0ff-f6bd-4a60-8402-c2ca9a7f7803",
+      "name": "Respond Already Published"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 429,
+        "responseBody": "={{ { ok: false, rate_limited: true, record_id: $('Evaluate Preflight').first().json.record_id, reason: $('Evaluate Preflight').first().json.reason } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1920,
+        -256
+      ],
+      "id": "23c4cbfe-5cc1-4fec-a599-b8bbef4f6957",
+      "name": "Respond Rate Limited"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Shared IG Publisher — Build Failure Context\n// Invoked by the error output of any step in the main lane after preflight\n// passes. Normalizes the error payload and falls back to the Validate Input\n// context if the failing node no longer carries queue_table / record_id.\nconst item = ($input.first() && $input.first().json) || {};\n\nlet queue_table = item.queue_table;\nlet record_id = item.record_id;\ntry {\n  const src = $('Validate Input').first().json;\n  if (!queue_table) queue_table = src.queue_table;\n  if (!record_id) record_id = src.record_id;\n} catch (e) {\n  // Validate Input may not have produced anything yet — leave fallbacks.\n}\n\nlet errMsg = 'unknown error';\nif (item.error) {\n  if (typeof item.error === 'string') {\n    errMsg = item.error;\n  } else if (item.error.message) {\n    errMsg = item.error.message;\n  } else {\n    try { errMsg = JSON.stringify(item.error); } catch (e) { errMsg = String(item.error); }\n  }\n} else if (item.message) {\n  errMsg = String(item.message);\n}\nerrMsg = String(errMsg).slice(0, 500);\n\nif (!queue_table || !record_id) {\n  // Can't update a DB row we cannot identify — surface via response only.\n  return [{ json: { queue_table: null, record_id: null, error: errMsg, unidentifiable: true } }];\n}\n\nreturn [{ json: { queue_table, record_id, error: errMsg } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        352
+      ],
+      "id": "7d019a00-456b-4cb6-a1d9-a133c48cc8b8",
+      "name": "Build Failure Context"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Shared IG Publisher — Compute Failure Update\n// Reads the already-fetched row from \"Get Current Row\" (run during preflight)\n// so we avoid a second round-trip just to read retry_count. Bumps retry_count\n// and flips status to 'failed' or 'failed_terminal' depending on the new\n// count.\nlet currentRetry = 0;\ntry {\n  const rows = $('Get Current Row').all();\n  const row = (rows.length > 0 && rows[0].json) || {};\n  currentRetry = Number(row.retry_count || 0);\n} catch (e) {\n  currentRetry = 0;\n}\nconst ctx = $('Build Failure Context').first().json;\n\nconst newRetry = currentRetry + 1;\n// 3 failed attempts total -> terminal. Pipelines stop retrying.\nconst status = newRetry >= 3 ? 'failed_terminal' : 'failed';\n\nreturn [{\n  json: {\n    queue_table: ctx.queue_table,\n    record_id: ctx.record_id,\n    status,\n    retry_count: newRetry,\n    failure_reason: ctx.error,\n    failed_at: new Date().toISOString(),\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        352
+      ],
+      "id": "59984809-9731-418c-b6e8-3331f446e504",
+      "name": "Compute Failure Update"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "={{ $json.queue_table }}",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.record_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "retry_count",
+              "fieldValue": "={{ $json.retry_count }}"
+            },
+            {
+              "fieldId": "failure_reason",
+              "fieldValue": "={{ $json.failure_reason }}"
+            },
+            {
+              "fieldId": "failed_at",
+              "fieldValue": "={{ $json.failed_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        352
+      ],
+      "id": "34b295cd-9385-4556-8a50-cda8ff7e3e74",
+      "name": "Mark Queue Row Failed",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yEOFcjOD4EJoFmWl",
+          "name": "Supabase account"
+        }
+      },
+      "alwaysOutputData": true,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 500,
+        "responseBody": "={{ { ok: false, record_id: $('Compute Failure Update').first().json.record_id, status: $('Compute Failure Update').first().json.status, retry_count: $('Compute Failure Update').first().json.retry_count, error: $('Compute Failure Update').first().json.failure_reason } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3120,
+        352
+      ],
+      "id": "9d8d0c8d-6219-42c1-b5df-a48475eb4eca",
+      "name": "Respond Failure"
     }
   ],
   "pinData": {},
@@ -170,58 +518,188 @@
       "main": [
         [
           {
-            "node": "Normalize Input",
+            "node": "Validate Input",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Normalize Input": {
+    "Validate Input": {
       "main": [
         [
           {
-            "node": "Instagram Create Image Container",
+            "node": "Get Current Row",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Instagram Create Image Container": {
+    "Get Current Row": {
       "main": [
         [
           {
-            "node": "Prepare Publish",
+            "node": "Check Cooldown Count",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare Publish": {
+    "Check Cooldown Count": {
       "main": [
         [
           {
-            "node": "Instagram Publish Image",
+            "node": "Check Daily Cap Count",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Instagram Publish Image": {
+    "Check Daily Cap Count": {
       "main": [
         [
           {
-            "node": "Prepare DB Update",
+            "node": "Evaluate Preflight",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare DB Update": {
+    "Evaluate Preflight": {
+      "main": [
+        [
+          {
+            "node": "If Already Published",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Already Published": {
+      "main": [
+        [
+          {
+            "node": "Respond Already Published",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Rate Limited",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Rate Limited": {
+      "main": [
+        [
+          {
+            "node": "Respond Rate Limited",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Image URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Image URLs": {
+      "main": [
+        [
+          {
+            "node": "Instagram Create Child Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Create Child Container": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Child Containers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate Child Containers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Child Containers": {
+      "main": [
+        [
+          {
+            "node": "Instagram Create Carousel Container",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Failure Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Create Carousel Container": {
+      "main": [
+        [
+          {
+            "node": "Instagram Publish Carousel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Failure Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Publish Carousel": {
+      "main": [
+        [
+          {
+            "node": "Prepare Success Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Failure Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Success Update": {
       "main": [
         [
           {
@@ -236,7 +714,47 @@
       "main": [
         [
           {
-            "node": "Respond",
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Failure Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Failure Context": {
+      "main": [
+        [
+          {
+            "node": "Compute Failure Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Failure Update": {
+      "main": [
+        [
+          {
+            "node": "Mark Queue Row Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Queue Row Failed": {
+      "main": [
+        [
+          {
+            "node": "Respond Failure",
             "type": "main",
             "index": 0
           }
@@ -251,7 +769,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "e6debc42-0fba-404c-b754-ced378cc6f4f",
+  "versionId": "021cbbe4-5620-4e35-a197-58e12988111c",
   "meta": {
     "instanceId": "7b3ca0ab272ef54f13238977d2c37a8659e0528de7067effda5cfba76f9e76df"
   },
