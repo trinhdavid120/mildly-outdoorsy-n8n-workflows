@@ -227,6 +227,7 @@ def build_validate() -> Dict[str, Any]:
         "position": [X_STEP * 1, Y_MAIN],
         "id": _new_id(),
         "name": N_VALIDATE,
+        "onError": "continueErrorOutput",
     }
 
 
@@ -428,6 +429,7 @@ def build_evaluate() -> Dict[str, Any]:
         "position": [X_STEP * 5, Y_MAIN],
         "id": _new_id(),
         "name": N_EVALUATE,
+        "onError": "continueErrorOutput",
     }
 
 
@@ -784,19 +786,28 @@ def build_respond_rate_limited() -> Dict[str, Any]:
 # Failure lane
 # ---------------------------------------------------------------------------
 BUILD_FAIL_CTX_CODE = r"""// Shared IG Publisher — Build Failure Context
-// Invoked by the error output of any step in the main lane after preflight
-// passes. Normalizes the error payload and falls back to the Validate Input
-// context if the failing node no longer carries queue_table / record_id.
+// Invoked by the error output of Validate Input, Evaluate Preflight, or any
+// step in the main lane after preflight passes. Normalizes the error payload
+// and falls back to the Validate Input context (or the raw webhook body) if
+// the failing node no longer carries queue_table / record_id.
 const item = ($input.first() && $input.first().json) || {};
 
+// Try several shapes: the normalized item, the raw webhook body, or the
+// webhook envelope's `body` field.
 let queue_table = item.queue_table;
 let record_id = item.record_id;
+if ((!queue_table || !record_id) && item.body && typeof item.body === 'object') {
+  if (!queue_table) queue_table = item.body.queue_table;
+  if (!record_id) record_id = item.body.record_id;
+}
 try {
   const src = $('Validate Input').first().json;
-  if (!queue_table) queue_table = src.queue_table;
-  if (!record_id) record_id = src.record_id;
+  if (src) {
+    if (!queue_table) queue_table = src.queue_table;
+    if (!record_id) record_id = src.record_id;
+  }
 } catch (e) {
-  // Validate Input may not have produced anything yet — leave fallbacks.
+  // Validate Input may not have produced any success output — that's fine.
 }
 
 let errMsg = 'unknown error';
@@ -989,11 +1000,21 @@ def build_connections() -> Dict[str, Any]:
     """
     return {
         N_WEBHOOK: {"main": [[_link(N_VALIDATE)]]},
-        N_VALIDATE: {"main": [[_link(N_GET_ROW)]]},
+        N_VALIDATE: {
+            "main": [
+                [_link(N_GET_ROW)],          # success
+                [_link(N_BUILD_FAIL_CTX)],   # error — webhook body invalid
+            ]
+        },
         N_GET_ROW: {"main": [[_link(N_CHECK_COOLDOWN)]]},
         N_CHECK_COOLDOWN: {"main": [[_link(N_CHECK_DAILY)]]},
         N_CHECK_DAILY: {"main": [[_link(N_EVALUATE)]]},
-        N_EVALUATE: {"main": [[_link(N_IF_ALREADY_PUBLISHED)]]},
+        N_EVALUATE: {
+            "main": [
+                [_link(N_IF_ALREADY_PUBLISHED)],  # success
+                [_link(N_BUILD_FAIL_CTX)],        # error — "record not found", etc.
+            ]
+        },
         N_IF_ALREADY_PUBLISHED: {
             "main": [
                 [_link(N_RESPOND_ALREADY)],  # true  -> short circuit
