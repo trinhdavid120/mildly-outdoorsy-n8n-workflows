@@ -6,8 +6,9 @@
         "rule": {
           "interval": [
             {
-              "field": "hours",
-              "hoursInterval": 6
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 5
             }
           ]
         }
@@ -18,180 +19,142 @@
         0,
         96
       ],
-      "id": "275eed79-e005-43c6-b8c8-fada9bce7630",
+      "id": "b6d8e064-3444-422f-8a60-46656fc785a2",
       "name": "Schedule Trigger"
     },
     {
       "parameters": {
-        "url": "https://newsapi.org/v2/everything?q=(hiking%20OR%20%22national%20park%22%20OR%20climbing%20OR%20backcountry%20OR%20trail%20OR%20mountaineering%20OR%20avalanche%20OR%20ski)&language=en&sortBy=publishedAt&pageSize=30&searchIn=title,description&apiKey=50572b2135cf4c2c9166a1de7c8efb3e",
+        "url": "https://newsapi.org/v2/everything?q=%28hiking%20OR%20%22national%20park%22%20OR%20climbing%20OR%20backcountry%20OR%20trail%20OR%20mountaineering%20OR%20avalanche%20OR%20ski%29&language=en&sortBy=publishedAt&pageSize=25&searchIn=title,description&apiKey=50572b2135cf4c2c9166a1de7c8efb3e",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        224,
+        240,
         0
       ],
-      "id": "05ad7a2f-f7e8-4bae-a2f5-6f8aab0f3e42",
+      "id": "d40c6616-6567-4961-ac9d-73a62af9cbb0",
       "name": "Get NewsAPI Articles"
     },
     {
       "parameters": {
         "operation": "getAll",
-        "tableId": "carousel_queue",
-        "limit": 300
+        "tableId": "news_card_queue",
+        "limit": 500
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        224,
+        240,
         192
       ],
-      "id": "8e1e3732-cab8-40bd-80f1-d07d1ce48de7",
+      "id": "6030f0bf-febc-4311-8837-ff6a4d1baed1",
       "name": "Get Existing Queue Rows",
       "credentials": {
         "supabaseApi": {
           "id": "yEOFcjOD4EJoFmWl",
           "name": "Supabase account"
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "parameters": {},
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        448,
+        480,
         96
       ],
-      "id": "2e0cbf9e-3334-47d0-857e-37780ac9ed19",
+      "id": "8da3fd98-2b2d-40b1-bf47-69e1456bab99",
       "name": "Merge Inputs"
     },
     {
       "parameters": {
-        "jsCode": "\nconst news = $('Get NewsAPI Articles').first().json.articles || [];\nconst existing = $('Get Existing Queue Rows').all().map(i=>i.json);\nconst seen = new Set(existing.map(r => String(r.source_url || '').toLowerCase()).filter(Boolean));\nconst clean=s=>String(s||'').replace(/\\s+/g,' ').trim();\nconst include=['hiking','hiker','trail','backcountry','national park','climb','climbing','mountain','mountaineer','avalanche','ski','snowpack','outdoor','rescue','wilderness','camping'];\nconst exclude=['stock','stocks','market','fed','interest rate','mortgage','crypto','earnings','consumer confidence','oil price','finance','financial'];\nconst out=[];\nfor (const a of news){\n const title=clean(a.title), desc=clean(a.description), url=clean(a.url), image=clean(a.urlToImage), source=clean(a.source?.name)||'NewsAPI';\n if(!title||!url||!image) continue;\n const text=(title+' '+desc).toLowerCase();\n if(exclude.some(x=>text.includes(x))) continue;\n if(include.filter(x=>text.includes(x)).length===0) continue;\n if(seen.has(url.toLowerCase())) continue;\n seen.add(url.toLowerCase());\n const prompt = 'You are filtering articles for the Mildly Outdoorsy Instagram brand. '+\n 'Brand fit: hiking, trails, national parks, climbing, ski/backcountry, mountain safety, outdoor rescue, wilderness culture. '+\n 'Reject finance, politics, generic business news unless directly outdoors-relevant. '+\n 'Audience context: outdoors-first people who scroll fast and only stop for high-stakes, useful, emotionally vivid stories. '+\n 'Writing objective: maximize swipe-through on a 5-slide carousel by turning the article into a tight narrative arc. '+\n 'Narrative requirements: slide2=what happened (scene + stakes), slide3=why it matters (impact + consequence), slide4=what to do/learn (practical takeaway), slide5=payoff/next-step/CTA that feels earned. '+\n 'Hook requirement: the first-card headline must be a thumb-stopping sentence with urgency/curiosity, no clickbait lies. '+\n 'Style constraints: concrete details over generic phrasing, active voice, short punchy lines, no hashtags in slide text. '+\n 'Given article. Title: '+title+' Description: '+desc+' Source: '+source+' URL: '+url+' '+\n 'Return STRICT JSON only with keys: keep(boolean), reason(string), headline_text(string <=140 chars), slide2_text(string <=220), slide3_text(string <=220), slide4_text(string <=220), slide5_text(string <=220), caption(string <=500).';\n out.push({json:{title,desc,url,image,source,prompt}});\n if(out.length>=10) break;\n}\nreturn out;\n"
+        "jsCode": "// Phase 3 — Build Candidate Articles\n// Filters, clusters, and scores NewsAPI results before the AI pass.\n\nconst news = $('Get NewsAPI Articles').first().json.articles || [];\nconst existing = $('Get Existing Queue Rows').all().map((i) => i.json);\n\n// -- Dedup vs existing queue rows ------------------------------------------\nconst seen = new Set(\n  existing\n    .map((r) => String(r.source_url || '').toLowerCase())\n    .filter(Boolean)\n);\n\n// -- Brand-fit keyword pre-filter ------------------------------------------\nconst include = [\n  'hiking', 'hiker', 'trail', 'backcountry', 'national park',\n  'climb', 'climbing', 'mountain', 'mountaineer',\n  'avalanche', 'ski', 'snowpack',\n  'outdoor', 'rescue', 'wilderness', 'camping'\n];\nconst exclude = [\n  'stock', 'stocks', 'market', 'fed', 'interest rate', 'mortgage',\n  'crypto', 'earnings', 'consumer confidence', 'oil price',\n  'finance', 'financial'\n];\n\n// -- Source tier map (edit here to maintain without a migration) -----------\n// 10 = tier-1 wire / national: 7 = tier-2 national or outdoor-native:\n// 4 = tier-3 known outlet: 3 = unknown fallback.\nconst SOURCE_TIERS = {\n  // Tier 1 — wires + top nationals\n  'reuters': 10, 'associated press': 10, 'ap news': 10, 'ap': 10,\n  'bbc news': 10, 'bbc': 10,\n  'the new york times': 10, 'new york times': 10, 'nytimes': 10,\n  'the washington post': 10, 'washington post': 10,\n  'npr': 10, 'the guardian': 10, 'guardian': 10,\n  'bloomberg': 10, 'the wall street journal': 10, 'wall street journal': 10,\n  // Tier 2 — nationals + outdoor-native\n  'cnn': 7, 'cbs news': 7, 'nbc news': 7, 'abc news': 7,\n  'usa today': 7, 'axios': 7,\n  'the verge': 7, 'ars technica': 7,\n  'national geographic': 7, 'nat geo': 7,\n  'outside magazine': 7, 'outside': 7, 'outside online': 7,\n  'backpacker': 7, 'backpacker magazine': 7,\n  'rei co-op journal': 7, 'rei': 7,\n  'climbing magazine': 7, 'climbing': 7,\n  'powder magazine': 7, 'powder': 7,\n  'snews': 7, 'snowsports industries': 7,\n  // Tier 3 — other recognizable outlets\n  'the new yorker': 4, 'time': 4, 'newsweek': 4,\n  'huffpost': 4, 'the huffington post': 4,\n  'vox': 4, 'slate': 4, 'the atlantic': 4,\n  'gearjunkie': 4, 'adventure journal': 4,\n};\nfunction tierScore(name) {\n  const key = String(name || '').toLowerCase().trim();\n  if (!key) return 3;\n  if (SOURCE_TIERS[key] != null) return SOURCE_TIERS[key];\n  // Partial match — some NewsAPI source names include subtitles\n  // (e.g. \"Outside Magazine (Syndicated)\")\n  for (const k of Object.keys(SOURCE_TIERS)) {\n    if (key.includes(k)) return SOURCE_TIERS[k];\n  }\n  return 3;\n}\n\n// -- Recency score ---------------------------------------------------------\n// NewsAPI free tier delays articles by ~24h, so the tiers start at <30h=10\n// instead of the usual <6h=10.\nfunction recencyScore(publishedAt) {\n  if (!publishedAt) return 0;\n  const ms = Date.now() - new Date(publishedAt).getTime();\n  if (isNaN(ms) || ms < 0) return 0;\n  const hours = ms / (1000 * 60 * 60);\n  if (hours < 30) return 10;\n  if (hours < 48) return 8;\n  if (hours < 72) return 5;\n  if (hours < 24 * 7) return 2;\n  return 0;\n}\n\n// -- Title normalization + Jaccard clustering for coverage_count -----------\nfunction normalizeTitle(t) {\n  return String(t || '')\n    .toLowerCase()\n    .replace(/[^\\w\\s]/g, ' ')\n    .split(/\\s+/)\n    .filter((w) => w.length > 2);\n}\nfunction jaccard(aTokens, bTokens) {\n  const a = new Set(aTokens);\n  const b = new Set(bTokens);\n  if (a.size === 0 || b.size === 0) return 0;\n  let inter = 0;\n  for (const x of a) if (b.has(x)) inter++;\n  return inter / (a.size + b.size - inter);\n}\n\nconst clean = (s) => String(s || '').replace(/\\s+/g, ' ').trim();\n\n// -- Stage 1: normalize + pre-filter + dedup -------------------------------\nconst prelim = [];\nfor (const a of news) {\n  const title = clean(a.title);\n  const desc = clean(a.description);\n  const url = clean(a.url);\n  const image = clean(a.urlToImage);\n  const source = clean(a.source && a.source.name) || 'NewsAPI';\n  const publishedAt = a.publishedAt || null;\n\n  if (!title || !url || !image) continue;\n  const text = (title + ' ' + desc).toLowerCase();\n  if (exclude.some((x) => text.includes(x))) continue;\n  if (include.filter((x) => text.includes(x)).length === 0) continue;\n  if (seen.has(url.toLowerCase())) continue;\n  seen.add(url.toLowerCase());\n\n  prelim.push({\n    title,\n    desc,\n    url,\n    image,\n    source,\n    publishedAt,\n    tokens: normalizeTitle(title),\n  });\n}\n\n// -- Stage 2: cluster by title similarity for coverage_count ---------------\n// Greedy clustering: each article joins the first cluster whose\n// representative has Jaccard >= 0.6. Otherwise it seeds a new cluster.\nconst CLUSTER_THRESHOLD = 0.6;\nconst clusters = [];\nfor (const a of prelim) {\n  let placed = false;\n  for (const c of clusters) {\n    if (jaccard(c[0].tokens, a.tokens) >= CLUSTER_THRESHOLD) {\n      c.push(a);\n      placed = true;\n      break;\n    }\n  }\n  if (!placed) clusters.push([a]);\n}\n// Each cluster => pick the best representative (highest source tier, then\n// most recent). Each rep carries coverage_count = cluster.length.\nfunction pickRepresentative(cluster) {\n  return cluster\n    .slice()\n    .sort((x, y) => {\n      const tx = tierScore(x.source);\n      const ty = tierScore(y.source);\n      if (tx !== ty) return ty - tx;\n      const px = new Date(x.publishedAt || 0).getTime();\n      const py = new Date(y.publishedAt || 0).getTime();\n      return py - px;\n    })[0];\n}\n\n// -- Stage 3: build per-candidate scored objects + AI prompts --------------\nconst promptHeader =\n  'You are filtering news articles for the Mildly Outdoorsy Instagram brand '\n  + 'and writing a 4-slide Instagram news-card carousel for the ones that '\n  + 'make the cut. '\n  + 'Brand fit: hiking, trails, national parks, climbing, ski/backcountry, '\n  + 'mountain safety, outdoor rescue, wilderness culture, camping. Reject '\n  + 'anything unrelated (finance, politics, generic business) unless there '\n  + 'is a direct outdoor angle. '\n  + 'Audience: outdoors-first people who scroll fast and only stop for '\n  + 'high-stakes, useful, emotionally vivid stories. '\n  + 'Format: 4 slides. Slide 1 is the hero source image with a thumb-stopping '\n  + 'headline overlay. Slides 2-4 are AI-generated images (using the source '\n  + 'image as a visual reference) with one line of text each, forming a '\n  + 'tight narrative arc: slide 2 = what happened (scene + stakes), '\n  + 'slide 3 = why it matters (impact + consequence), slide 4 = what to do / '\n  + 'what to learn (practical payoff). NO slide 5.';\n\nconst scoringRubric =\n  'Return TWO numeric judgments: '\n  + '(1) relevance_score: 0-10 integer for how well this fits the brand '\n  + '(10 = perfect outdoor story, 5 = borderline, 0 = reject). '\n  + '(2) momentum_score: 0-10 integer for whether this is a still-active / '\n  + 'developing story vs. old news fading into the archive. Active '\n  + 'investigations, ongoing rescues, developing weather events, recent '\n  + 'follow-ups = high. A one-off blurb from last week = low.';\n\nconst slideRules =\n  'Each slide_N_text is one punchy line (<=180 chars), active voice, concrete '\n  + 'details over generic phrasing, no hashtags, no clickbait lies. '\n  + 'IMPORTANT — fal prompt context: each slide_N_fal_prompt will be passed '\n  + 'to fal in IMG2IMG mode using the source article photo as the input '\n  + 'image. The model TRANSFORMS the source photo, it does not generate '\n  + 'from scratch. Write prompts that steer a transformation of the same '\n  + 'scene/subject — change time of day, weather, camera angle, mood, or '\n  + 'add narrative elements — but stay anchored to whatever is actually IN '\n  + 'the source photo. Do NOT invent unrelated subjects (no \"lone climber\" '\n  + 'if the photo is a forest fire; no \"snowy peaks\" if the photo is a '\n  + 'desert canyon). Each prompt is 1-2 sentences, photographic language, '\n  + 'cinematic outdoor lighting, no text in the image, no people added if '\n  + 'none are in the source. Good example for an avalanche article whose '\n  + 'source photo shows a snowy ridge: \"The same snowy ridge under '\n  + 'darkening storm clouds, fresh snow streaming off the cornice, dramatic '\n  + 'cinematic lighting.\" '\n  + 'Slide 2 prompt = the scene of what happened (transform the source to '\n  + 'feel like the moment of the event). '\n  + 'Slide 3 prompt = the consequence/aftermath (transform the same scene '\n  + 'to show stakes — weather change, time shift, mood shift). '\n  + 'Slide 4 prompt = the takeaway/lesson (transform the source to feel '\n  + 'instructive, calmer, resolved). '\n  + 'Caption: <=500 chars, opens with the hook, ends with a human CTA '\n  + '(\"Stay safe out there.\", \"Trail\\'s calling.\", etc.). No hashtags.';\n\nconst out = [];\nfor (const cluster of clusters) {\n  const rep = pickRepresentative(cluster);\n  const coverage = cluster.length;\n\n  const r_recency = recencyScore(rep.publishedAt);\n  const r_tier = tierScore(rep.source);\n  const r_coverage = Math.min(coverage, 10);\n\n  const promptArticle =\n    'Given article. Title: ' + rep.title\n    + ' | Description: ' + (rep.desc || '(none)')\n    + ' | Source: ' + rep.source\n    + ' | URL: ' + rep.url\n    + ' | PublishedAt: ' + (rep.publishedAt || '(unknown)');\n\n  const promptSchema =\n    'Return STRICT JSON only with these keys and types: '\n    + '{ '\n    + '\"relevance_score\": integer 0-10, '\n    + '\"momentum_score\": integer 0-10, '\n    + '\"reason\": string, '\n    + '\"headline_text\": string <=140 chars, '\n    + '\"slide_2_text\": string <=180, '\n    + '\"slide_2_fal_prompt\": string, '\n    + '\"slide_3_text\": string <=180, '\n    + '\"slide_3_fal_prompt\": string, '\n    + '\"slide_4_text\": string <=180, '\n    + '\"slide_4_fal_prompt\": string, '\n    + '\"caption\": string <=500 '\n    + '}. No prose outside the JSON.';\n\n  const prompt = [\n    promptHeader,\n    scoringRubric,\n    slideRules,\n    promptArticle,\n    promptSchema,\n  ].join('\\n\\n');\n\n  out.push({\n    json: {\n      // candidate identity\n      title: rep.title,\n      desc: rep.desc,\n      url: rep.url,\n      image: rep.image,\n      source: rep.source,\n      publishedAt: rep.publishedAt,\n      // pre-AI scores (JS-computed)\n      coverage_count: coverage,\n      recency_score: r_recency,\n      source_tier_score: r_tier,\n      coverage_score: r_coverage,\n      // AI prompt\n      prompt,\n    },\n  });\n}\n\nreturn out;\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
+        720,
         96
       ],
-      "id": "4f6858a3-79ff-46ab-84a6-a8336a558f78",
+      "id": "6874dbcf-7429-4fcc-8eeb-4bf746107db3",
       "name": "Build Candidate Articles"
     },
     {
       "parameters": {
-        "jsCode": "return $input.all().map((item, idx) => {\n  const src = $('Build Candidate Articles').all()[idx]?.json || {};\n  let parsed = { keep: false, reason: 'parse_failed' };\n  try {\n    // Handle OpenAI chat completion response\n    const raw = item.json?.choices?.[0]?.message?.content\n      ?? item.json?.result\n      ?? null;\n    if (raw) {\n      parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;\n    }\n  } catch(e) {\n    parsed = { keep: false, reason: 'json_parse_error: ' + e.message };\n  }\n  return { json: { ...src, ...parsed } };\n});\n"
+        "method": "POST",
+        "url": "http://host.docker.internal:8080/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'openai-codex/gpt-5.3-codex', messages: [   { role: 'system', content: 'You are a content filter and story writer for the Mildly Outdoorsy Instagram brand. Output strict JSON matching the schema in the user prompt — no markdown, no prose outside the JSON.' },   { role: 'user', content: $json.prompt } ], response_format: { type: 'json_object' }, temperature: 0.6 }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        96
+      ],
+      "id": "c0fee58b-5d23-4d9f-b0e4-8f0a657f914b",
+      "name": "AI Relevance + Story Pass",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TrFedQ8VlGnEkofb",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 3 — Parse AI Output\n// Merges each AI response back onto its corresponding Build Candidate\n// Articles item by index. Tolerates parse failures: a failed parse becomes\n// an item with relevance_score=0, which the Rank node will drop.\nreturn $input.all().map((item, idx) => {\n  const src = $('Build Candidate Articles').all()[idx]?.json || {};\n  let parsed = { relevance_score: 0, reason: 'parse_failed' };\n  try {\n    const raw =\n      item.json?.choices?.[0]?.message?.content\n      ?? item.json?.result\n      ?? null;\n    if (raw) {\n      parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;\n    }\n  } catch (e) {\n    parsed = { relevance_score: 0, reason: 'json_parse_error: ' + e.message };\n  }\n  // Coerce numerics defensively: the model sometimes returns them as strings.\n  parsed.relevance_score = Number(parsed.relevance_score) || 0;\n  parsed.momentum_score = Number(parsed.momentum_score) || 0;\n  return { json: { ...src, ...parsed } };\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1120,
+        1200,
         96
       ],
-      "id": "8f31f352-9759-4321-9f35-1c1c6f81aa30",
+      "id": "70d9dee8-16c0-444b-bfe1-bdacfefab813",
       "name": "Parse AI Output"
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "leftValue": "={{ $json.keep }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              },
-              "id": "0c73fa40-14cf-449d-a745-ab8d1cc1ed16"
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1344,
-        96
-      ],
-      "id": "95ba4f19-1b54-48ff-8cd8-b5853fc4389b",
-      "name": "If Keep"
-    },
-    {
-      "parameters": {
-        "jsCode": "\nreturn $input.all().slice(0,3).map(i=>{\n  const j=i.json;\n  const headline=String(j.headline_text||j.title||'').trim();\n  return {json:{\n    status:'pending',\n    queue_status:'pending',\n    content_type:'twitter_card_balanced',\n    shirt_name:'newsapi',\n    headline_text:headline,\n    slide_1_main_text:headline,\n    slide_1_sub_text:'Source: '+(j.source||'NewsAPI'),\n    slide_2_main_text:j.slide2_text||'',\n    slide_3_main_text:j.slide3_text||'',\n    slide_4_main_text:j.slide4_text||'',\n    slide_5_main_text:j.slide5_text||'',\n    caption:j.caption||[headline,'Source: '+(j.source||'NewsAPI'),j.url].join('\\n\\n'),\n    source_name:j.source||'NewsAPI',\n    source_image_url:j.image,\n    source_url:j.url\n  }};\n});\n"
+        "jsCode": "// Phase 3 — Rank and Select Top 3\n// Composite scoring:\n//   traction_score = 0.30*recency + 0.25*source_tier + 0.25*coverage\n//                  + 0.20*momentum\n//   final_score    = 0.70*relevance + 0.30*traction\n// Relevance stays dominant per explicit product decision.\nconst RELEVANCE_FLOOR = 5;\nconst MAX_KEEP = 3;\n\nconst scored = $input.all().map((item) => {\n  const j = item.json || {};\n  const rel = Number(j.relevance_score) || 0;\n  const mom = Number(j.momentum_score) || 0;\n  const rec = Number(j.recency_score) || 0;\n  const tier = Number(j.source_tier_score) || 0;\n  const cov = Number(j.coverage_score) || 0;\n\n  const traction = 0.30 * rec + 0.25 * tier + 0.25 * cov + 0.20 * mom;\n  const final_score = 0.70 * rel + 0.30 * traction;\n\n  return {\n    json: {\n      ...j,\n      traction_score: Math.round(traction * 100) / 100,\n      final_score: Math.round(final_score * 100) / 100,\n    },\n  };\n});\n\n// Drop anything below the relevance floor BEFORE sorting, so the floor is\n// a hard brand-fit filter rather than a soft signal.\nconst kept = scored.filter((x) => (x.json.relevance_score || 0) >= RELEVANCE_FLOOR);\n\n// Sort: final_score DESC, then relevance DESC, then publishedAt DESC.\nkept.sort((a, b) => {\n  const fa = a.json.final_score, fb = b.json.final_score;\n  if (fb !== fa) return fb - fa;\n  const ra = a.json.relevance_score || 0, rb = b.json.relevance_score || 0;\n  if (rb !== ra) return rb - ra;\n  const pa = new Date(a.json.publishedAt || 0).getTime();\n  const pb = new Date(b.json.publishedAt || 0).getTime();\n  return pb - pa;\n});\n\nreturn kept.slice(0, MAX_KEEP);\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1568,
+        1440,
         96
       ],
-      "id": "0a9d44a3-fa3e-448b-b2d0-970467fda46d",
+      "id": "76ec98dc-f416-4182-a2ee-725d1d4dd1aa",
+      "name": "Rank and Select Top 3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 3 — Prepare Queue Rows\n// Maps the scored + AI-enriched candidate into the news_card_queue schema.\n// Fields that are NOT NULL at the DB level: source_url, source_image_url,\n// headline_text, caption, slide_{2,3,4}_text, slide_{2,3,4}_fal_prompt.\n// The insert node refuses the row if any of those are blank, so we fall\n// back to safe defaults on the fal prompts (we'd rather post a bland image\n// than fail the entire ingest on a picky LLM response).\nreturn $input.all().map((item) => {\n  const j = item.json || {};\n  const headline = String(j.headline_text || j.title || '').trim().slice(0, 140);\n  const caption = String(\n    j.caption\n    || [headline, 'Source: ' + (j.source || 'NewsAPI'), j.url].join('\\n\\n')\n  ).slice(0, 500);\n  const fallbackFal = 'Subtle cinematic transformation of the source photo, slightly darker mood, dramatic outdoor lighting, no people added, no text.';\n  return {\n    json: {\n      source_url: j.url,\n      source_name: j.source || 'NewsAPI',\n      source_image_url: j.image,\n      headline_text: headline,\n      slide_1_sub_text: 'Source: ' + (j.source || 'NewsAPI'),\n      slide_2_text: String(j.slide_2_text || '').slice(0, 220),\n      slide_2_fal_prompt: String(j.slide_2_fal_prompt || fallbackFal),\n      slide_3_text: String(j.slide_3_text || '').slice(0, 220),\n      slide_3_fal_prompt: String(j.slide_3_fal_prompt || fallbackFal),\n      slide_4_text: String(j.slide_4_text || '').slice(0, 220),\n      slide_4_fal_prompt: String(j.slide_4_fal_prompt || fallbackFal),\n      caption,\n      // Telemetry (not written to DB, just visible in execution log):\n      _final_score: j.final_score,\n      _relevance_score: j.relevance_score,\n      _traction_score: j.traction_score,\n      _coverage_count: j.coverage_count,\n    },\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        96
+      ],
+      "id": "36e55829-0262-457c-9df9-2b9226747e56",
       "name": "Prepare Queue Rows"
     },
     {
       "parameters": {
-        "tableId": "carousel_queue",
+        "tableId": "news_card_queue",
         "fieldsUi": {
           "fieldValues": [
             {
-              "fieldId": "status",
-              "fieldValue": "={{ $json.status }}"
-            },
-            {
-              "fieldId": "queue_status",
-              "fieldValue": "={{ $json.queue_status }}"
-            },
-            {
-              "fieldId": "content_type",
-              "fieldValue": "={{ $json.content_type }}"
-            },
-            {
-              "fieldId": "shirt_name",
-              "fieldValue": "={{ $json.shirt_name }}"
-            },
-            {
-              "fieldId": "headline_text",
-              "fieldValue": "={{ $json.headline_text }}"
-            },
-            {
-              "fieldId": "slide_1_main_text",
-              "fieldValue": "={{ $json.slide_1_main_text }}"
-            },
-            {
-              "fieldId": "slide_1_sub_text",
-              "fieldValue": "={{ $json.slide_1_sub_text }}"
-            },
-            {
-              "fieldId": "slide_2_main_text",
-              "fieldValue": "={{ $json.slide_2_main_text }}"
-            },
-            {
-              "fieldId": "slide_3_main_text",
-              "fieldValue": "={{ $json.slide_3_main_text }}"
-            },
-            {
-              "fieldId": "slide_4_main_text",
-              "fieldValue": "={{ $json.slide_4_main_text }}"
-            },
-            {
-              "fieldId": "slide_5_main_text",
-              "fieldValue": "={{ $json.slide_5_main_text }}"
-            },
-            {
-              "fieldId": "caption",
-              "fieldValue": "={{ $json.caption }}"
+              "fieldId": "source_url",
+              "fieldValue": "={{ $json.source_url }}"
             },
             {
               "fieldId": "source_name",
@@ -202,8 +165,40 @@
               "fieldValue": "={{ $json.source_image_url }}"
             },
             {
-              "fieldId": "source_url",
-              "fieldValue": "={{ $json.source_url }}"
+              "fieldId": "headline_text",
+              "fieldValue": "={{ $json.headline_text }}"
+            },
+            {
+              "fieldId": "slide_1_sub_text",
+              "fieldValue": "={{ $json.slide_1_sub_text }}"
+            },
+            {
+              "fieldId": "slide_2_text",
+              "fieldValue": "={{ $json.slide_2_text }}"
+            },
+            {
+              "fieldId": "slide_2_fal_prompt",
+              "fieldValue": "={{ $json.slide_2_fal_prompt }}"
+            },
+            {
+              "fieldId": "slide_3_text",
+              "fieldValue": "={{ $json.slide_3_text }}"
+            },
+            {
+              "fieldId": "slide_3_fal_prompt",
+              "fieldValue": "={{ $json.slide_3_fal_prompt }}"
+            },
+            {
+              "fieldId": "slide_4_text",
+              "fieldValue": "={{ $json.slide_4_text }}"
+            },
+            {
+              "fieldId": "slide_4_fal_prompt",
+              "fieldValue": "={{ $json.slide_4_fal_prompt }}"
+            },
+            {
+              "fieldId": "caption",
+              "fieldValue": "={{ $json.caption }}"
             }
           ]
         }
@@ -211,41 +206,15 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1792,
+        1920,
         96
       ],
-      "id": "ef592738-6042-4fb9-82de-6f29aaae75b8",
+      "id": "fff8b52f-0641-4431-85ac-93313e2431e8",
       "name": "Insert Queue Rows",
       "credentials": {
         "supabaseApi": {
           "id": "yEOFcjOD4EJoFmWl",
           "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "http://host.docker.internal:8080/v1/chat/completions",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'openai-codex/gpt-5.3-codex', messages: [{ role: 'system', content: 'You are a content filter and story writer for the Mildly Outdoorsy Instagram brand.' }, { role: 'user', content: $json.prompt }], response_format: { type: 'json_object' }, temperature: 0.7 }) }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        896,
-        96
-      ],
-      "id": "f02f0f62-c58a-415c-aebc-cb50818e1e1c",
-      "name": "AI Relevance + Story Pass",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "TrFedQ8VlGnEkofb",
-          "name": "Header Auth account"
         }
       }
     }
@@ -312,18 +281,29 @@
         ]
       ]
     },
-    "Parse AI Output": {
+    "AI Relevance + Story Pass": {
       "main": [
         [
           {
-            "node": "If Keep",
+            "node": "Parse AI Output",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If Keep": {
+    "Parse AI Output": {
+      "main": [
+        [
+          {
+            "node": "Rank and Select Top 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank and Select Top 3": {
       "main": [
         [
           {
@@ -331,8 +311,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Prepare Queue Rows": {
@@ -345,17 +324,6 @@
           }
         ]
       ]
-    },
-    "AI Relevance + Story Pass": {
-      "main": [
-        [
-          {
-            "node": "Parse AI Output",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": true,
@@ -363,7 +331,8 @@
     "executionOrder": "v1",
     "binaryMode": "separate",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timezone": "America/Los_Angeles"
   },
   "versionId": "73f95cca-242d-4ac0-a28b-4df2faedad84",
   "meta": {
