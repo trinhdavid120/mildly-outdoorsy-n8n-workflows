@@ -722,14 +722,13 @@ def build_respond_success() -> Dict[str, Any]:
     return {
         "parameters": {
             "respondWith": "json",
-            "responseCode": 200,
             "responseBody": (
                 "={{ { ok: true, "
                 "record_id: $('Prepare Success Update').first().json.record_id, "
                 "instagram_post_id: $('Prepare Success Update').first().json.instagram_post_id, "
                 "published_at: $('Prepare Success Update').first().json.published_at } }}"
             ),
-            "options": {},
+            "options": {"responseCode": 200},
         },
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1.1,
@@ -743,7 +742,6 @@ def build_respond_already_published() -> Dict[str, Any]:
     return {
         "parameters": {
             "respondWith": "json",
-            "responseCode": 200,
             "responseBody": (
                 "={{ { ok: true, "
                 "already_published: true, "
@@ -751,7 +749,7 @@ def build_respond_already_published() -> Dict[str, Any]:
                 "instagram_post_id: $('Evaluate Preflight').first().json.instagram_post_id, "
                 "published_at: $('Evaluate Preflight').first().json.published_at } }}"
             ),
-            "options": {},
+            "options": {"responseCode": 200},
         },
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1.1,
@@ -765,14 +763,13 @@ def build_respond_rate_limited() -> Dict[str, Any]:
     return {
         "parameters": {
             "respondWith": "json",
-            "responseCode": 429,
             "responseBody": (
                 "={{ { ok: false, "
                 "rate_limited: true, "
                 "record_id: $('Evaluate Preflight').first().json.record_id, "
                 "reason: $('Evaluate Preflight').first().json.reason } }}"
             ),
-            "options": {},
+            "options": {"responseCode": 429},
         },
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1.1,
@@ -934,7 +931,6 @@ def build_respond_failure() -> Dict[str, Any]:
     return {
         "parameters": {
             "respondWith": "json",
-            "responseCode": 500,
             "responseBody": (
                 "={{ { ok: false, "
                 "record_id: $('Compute Failure Update').first().json.record_id, "
@@ -942,7 +938,7 @@ def build_respond_failure() -> Dict[str, Any]:
                 "retry_count: $('Compute Failure Update').first().json.retry_count, "
                 "error: $('Compute Failure Update').first().json.failure_reason } }}"
             ),
-            "options": {},
+            "options": {"responseCode": 500},
         },
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1.1,
