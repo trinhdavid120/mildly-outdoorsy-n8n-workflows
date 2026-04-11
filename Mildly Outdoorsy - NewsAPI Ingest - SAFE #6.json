@@ -19,7 +19,7 @@
         0,
         96
       ],
-      "id": "b6d8e064-3444-422f-8a60-46656fc785a2",
+      "id": "05492fac-8563-48cb-a879-b96123e7a9c2",
       "name": "Schedule Trigger"
     },
     {
@@ -33,7 +33,7 @@
         240,
         0
       ],
-      "id": "d40c6616-6567-4961-ac9d-73a62af9cbb0",
+      "id": "230a3aa1-3c42-4e19-b3d5-61435ed92bc2",
       "name": "Get NewsAPI Articles"
     },
     {
@@ -48,7 +48,7 @@
         240,
         192
       ],
-      "id": "6030f0bf-febc-4311-8837-ff6a4d1baed1",
+      "id": "7ca2ebec-e8b2-400c-be46-666a7e01d782",
       "name": "Get Existing Queue Rows",
       "credentials": {
         "supabaseApi": {
@@ -66,7 +66,7 @@
         480,
         96
       ],
-      "id": "8da3fd98-2b2d-40b1-bf47-69e1456bab99",
+      "id": "51cdad49-9006-47da-98aa-74c61a51d837",
       "name": "Merge Inputs"
     },
     {
@@ -79,18 +79,18 @@
         720,
         96
       ],
-      "id": "6874dbcf-7429-4fcc-8eeb-4bf746107db3",
+      "id": "c6b3bbe9-df53-4a74-b1f6-7bc98c343512",
       "name": "Build Candidate Articles"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:8080/v1/chat/completions",
+        "url": "https://api.openai.com/v1/chat/completions",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
+        "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'openai-codex/gpt-5.3-codex', messages: [   { role: 'system', content: 'You are a content filter and story writer for the Mildly Outdoorsy Instagram brand. Output strict JSON matching the schema in the user prompt — no markdown, no prose outside the JSON.' },   { role: 'user', content: $json.prompt } ], response_format: { type: 'json_object' }, temperature: 0.6 }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', messages: [   { role: 'system', content: 'You are a content filter and story writer for the Mildly Outdoorsy Instagram brand. Output strict JSON matching the schema in the user prompt — no markdown, no prose outside the JSON.' },   { role: 'user', content: $json.prompt } ], response_format: { type: 'json_object' }, temperature: 0.6 }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -99,14 +99,16 @@
         960,
         96
       ],
-      "id": "c0fee58b-5d23-4d9f-b0e4-8f0a657f914b",
+      "id": "1b66942d-aa67-46ad-b2f2-55d244141e5c",
       "name": "AI Relevance + Story Pass",
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "TrFedQ8VlGnEkofb",
-          "name": "Header Auth account"
+        "openAiApi": {
+          "id": "3e4ov9pYU3t3S3HG",
+          "name": "OpenAi account"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 2
     },
     {
       "parameters": {
@@ -118,7 +120,7 @@
         1200,
         96
       ],
-      "id": "70d9dee8-16c0-444b-bfe1-bdacfefab813",
+      "id": "63d1f761-a036-4602-be6b-5e50513a011d",
       "name": "Parse AI Output"
     },
     {
@@ -131,7 +133,7 @@
         1440,
         96
       ],
-      "id": "76ec98dc-f416-4182-a2ee-725d1d4dd1aa",
+      "id": "f7be0b35-0330-4d3d-8664-c1221186fd4f",
       "name": "Rank and Select Top 3"
     },
     {
@@ -144,7 +146,7 @@
         1680,
         96
       ],
-      "id": "36e55829-0262-457c-9df9-2b9226747e56",
+      "id": "577289c9-e07e-49c3-9279-aa79eb54298d",
       "name": "Prepare Queue Rows"
     },
     {
@@ -209,7 +211,7 @@
         1920,
         96
       ],
-      "id": "fff8b52f-0641-4431-85ac-93313e2431e8",
+      "id": "d338d62c-2de4-4594-a714-b71c4a709fd0",
       "name": "Insert Queue Rows",
       "credentials": {
         "supabaseApi": {

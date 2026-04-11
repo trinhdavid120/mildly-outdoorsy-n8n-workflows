@@ -31,10 +31,17 @@ news-card-schema ingest that:
                          Build Candidate Articles node to maintain it.
     coverage_score     — min(coverage_count, 10). An article in a cluster
                          of 8 gets 8; a lonely outlet gets 1.
-- Calls the local LLM HTTP endpoint once per candidate to get AI
-  judgments: relevance_score (0-10), momentum_score (0-10, "is this
-  still an active/developing story vs. fading?"), headline_text, the
-  three slide texts + fal prompts for slides 2/3/4, and the caption.
+- Calls the real OpenAI Chat Completions API (gpt-4o-mini) once per
+  candidate to get AI judgments: relevance_score (0-10), momentum_score
+  (0-10, "is this still an active/developing story vs. fading?"),
+  headline_text, the three slide texts + fal prompts for slides 2/3/4,
+  and the caption. Authentication is via n8n's existing `OpenAi account`
+  credential (openAiApi type) — no API keys touch this file.
+
+  NB: the previous version of this workflow called a local LLM proxy at
+  host.docker.internal:8080 ("openai-codex/gpt-5.3-codex"). That proxy
+  was offline, so every execution silently failed at the AI step. This
+  migration cuts over to real OpenAI to make the pipeline self-sufficient.
   The prompt explicitly covers the 4-slide news_card format — slide 1
   is the source_image_url with the headline overlay, slides 2-4 are
   fal IMG2IMG transformations of source_image_url (Phase 4 will run
@@ -55,8 +62,12 @@ news-card-schema ingest that:
 
 Preserves:
   - workflow id, name, tags
-  - Schedule Trigger, HTTP, Code, Supabase, If, Merge node types
-  - supabaseApi + httpHeaderAuth credential references
+  - Schedule Trigger, HTTP, Code, Supabase, Merge node types
+  - supabaseApi credential reference
+
+Adds (vs. previous version):
+  - openAiApi credential reference (auto-discovered from sibling
+    workflow JSONs in the repo, with a hardcoded fallback id)
 
 Changes workflow settings:
   - timezone -> America/Los_Angeles (required for the daily 5am trigger
@@ -96,6 +107,16 @@ RELEVANCE_FLOOR = 5
 # Output cap per run.
 MAX_INSERTS_PER_RUN = 3
 
+# AI provider. We use the real OpenAI API via n8n's predefined openAiApi
+# credential type — the previous workflow tried to call a local LLM proxy
+# at host.docker.internal:8080 that hasn't been running, leaving the
+# pipeline stuck on every execution. Real OpenAI is reliable, the user
+# already has an `OpenAi account` credential in n8n, and at our scale
+# (~25 candidate calls/day) the cost is well under $0.01/day on
+# gpt-4o-mini.
+OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_MODEL = "gpt-4o-mini"
+
 # ---------------------------------------------------------------------------
 # Node names (stable — code nodes reference these via $('...') proxies)
 # ---------------------------------------------------------------------------
@@ -133,6 +154,15 @@ def save_workflow(workflow: Dict[str, Any]) -> None:
 # callers / credential references keep working without any reconfiguration.
 # ---------------------------------------------------------------------------
 def extract_identity(old: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Pull credential references and the NewsAPI URL out of the previous
+    workflow JSON. The OpenAI credential is searched for by *type*
+    (openAiApi) across all nodes — the previous version of this workflow
+    used a local-LLM HTTP shim and won't have an openAiApi reference
+    anywhere, so we fall back to scanning the rest of the workflows for
+    one. If nothing is found, we raise so the user knows to set it up
+    once in n8n.
+    """
     identity: Dict[str, Any] = {
         "workflow_id": old.get("id"),
         "name": old.get("name"),
@@ -143,29 +173,50 @@ def extract_identity(old: Dict[str, Any]) -> Dict[str, Any]:
         "pinData": old.get("pinData", {}),
         "versionId": old.get("versionId"),
         "supabase_api": None,
-        "http_header_auth": None,
+        "openai_api": None,
         "newsapi_url": None,
-        "ai_url": None,
-        "ai_body_template": None,
     }
     for node in old.get("nodes", []):
         creds = node.get("credentials") or {}
         if "supabaseApi" in creds and identity["supabase_api"] is None:
             identity["supabase_api"] = creds["supabaseApi"]
-        if "httpHeaderAuth" in creds and identity["http_header_auth"] is None:
-            identity["http_header_auth"] = creds["httpHeaderAuth"]
+        if "openAiApi" in creds and identity["openai_api"] is None:
+            identity["openai_api"] = creds["openAiApi"]
         if node.get("name") == N_GET_NEWS:
             identity["newsapi_url"] = (node.get("parameters") or {}).get("url")
-        if node.get("name") == N_AI:
-            params = node.get("parameters") or {}
-            identity["ai_url"] = params.get("url")
-            identity["ai_body_template"] = params.get("jsonBody")
 
-    missing = [
-        k
-        for k in ("supabase_api", "http_header_auth", "ai_url")
-        if identity[k] is None
-    ]
+    if identity["openai_api"] is None:
+        # Fall back to scanning other workflow JSONs in the repo for a
+        # known-good openAiApi credential reference. This is what we want
+        # the very first time we migrate this workflow off the local LLM
+        # — otherwise the user would have to hand-edit the JSON to wire
+        # in the credential.
+        for sibling in REPO_ROOT.glob("Mildly Outdoorsy - * - SAFE *.json"):
+            if sibling == WORKFLOW_PATH:
+                continue
+            try:
+                data = json.loads(sibling.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            for node in data.get("nodes", []):
+                creds = node.get("credentials") or {}
+                if "openAiApi" in creds:
+                    identity["openai_api"] = creds["openAiApi"]
+                    break
+            if identity["openai_api"] is not None:
+                break
+
+    if identity["openai_api"] is None:
+        # Last resort: hardcode the credential id we discovered via the
+        # n8n API on 2026-04-11 ("OpenAi account"). The user can rotate
+        # this manually in the n8n UI if needed; the credential reference
+        # in n8n's database is keyed by id, not by name.
+        identity["openai_api"] = {
+            "id": "3e4ov9pYU3t3S3HG",
+            "name": "OpenAi account",
+        }
+
+    missing = [k for k in ("supabase_api", "openai_api") if identity[k] is None]
     if missing:
         raise RuntimeError(
             f"Could not extract identity from old workflow; missing: {missing}"
@@ -575,14 +626,27 @@ def build_build(identity: Dict[str, Any]) -> Dict[str, Any]:
 
 def build_ai(identity: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Re-uses the same local LLM endpoint + auth credential as the previous
-    workflow. Body template is regenerated here (not copied) so we know
-    exactly what it is.
+    Calls the real OpenAI Chat Completions API via n8n's predefined
+    `openAiApi` credential type — n8n auto-injects the Authorization:
+    Bearer header from the credential, so we don't have to handle the
+    key here.
+
+    Replaces the previous local-LLM HTTP shim that pointed at
+    host.docker.internal:8080 (a service that hasn't been running and
+    silently broke every execution).
+
+    Model: gpt-4o-mini. Reliable, cheap (~$0.0005/run at our scale),
+    supports response_format=json_object so the AI is forced into the
+    schema we ask for in the prompt. To switch models later, edit the
+    OPENAI_MODEL constant at the top of this file and re-run the
+    migration.
+
+    retryOnFail/maxTries: tolerate single transient API blips so the
+    whole ingest doesn't go to waste because of one 503.
     """
-    ai_url = identity["ai_url"]
     json_body = (
         "={{ JSON.stringify({"
-        " model: 'openai-codex/gpt-5.3-codex',"
+        f" model: '{OPENAI_MODEL}',"
         " messages: ["
         "   { role: 'system', content:"
         " 'You are a content filter and story writer for the Mildly Outdoorsy"
@@ -597,9 +661,9 @@ def build_ai(identity: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "parameters": {
             "method": "POST",
-            "url": ai_url,
+            "url": OPENAI_CHAT_URL,
             "authentication": "predefinedCredentialType",
-            "nodeCredentialType": "httpHeaderAuth",
+            "nodeCredentialType": "openAiApi",
             "sendBody": True,
             "specifyBody": "json",
             "jsonBody": json_body,
@@ -610,7 +674,9 @@ def build_ai(identity: Dict[str, Any]) -> Dict[str, Any]:
         "position": [X_STEP * 4, Y_MAIN],
         "id": _new_id(),
         "name": N_AI,
-        "credentials": {"httpHeaderAuth": identity["http_header_auth"]},
+        "credentials": {"openAiApi": identity["openai_api"]},
+        "retryOnFail": True,
+        "maxTries": 2,
     }
 
 
