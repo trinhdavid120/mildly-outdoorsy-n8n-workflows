@@ -311,8 +311,8 @@
       "waitBetweenTries": 1800000,
       "credentials": {
         "httpQueryAuth": {
-          "id": "FhYSJdoGK10NqgIX",
-          "name": "Instagram Query Auth"
+          "id": "IxQ6wJEEhQa0WRQd",
+          "name": "Query Auth account 2"
         }
       }
     },
@@ -350,8 +350,8 @@
       "waitBetweenTries": 1800000,
       "credentials": {
         "httpQueryAuth": {
-          "id": "FhYSJdoGK10NqgIX",
-          "name": "Instagram Query Auth"
+          "id": "IxQ6wJEEhQa0WRQd",
+          "name": "Query Auth account 2"
         }
       }
     },
@@ -389,8 +389,8 @@
       "waitBetweenTries": 1800000,
       "credentials": {
         "httpQueryAuth": {
-          "id": "FhYSJdoGK10NqgIX",
-          "name": "Instagram Query Auth"
+          "id": "IxQ6wJEEhQa0WRQd",
+          "name": "Query Auth account 2"
         }
       }
     },

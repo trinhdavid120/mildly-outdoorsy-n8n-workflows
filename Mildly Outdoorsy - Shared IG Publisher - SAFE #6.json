@@ -236,8 +236,8 @@
       "name": "Instagram Create Child Container",
       "credentials": {
         "httpQueryAuth": {
-          "id": "FhYSJdoGK10NqgIX",
-          "name": "Instagram Query Auth"
+          "id": "IxQ6wJEEhQa0WRQd",
+          "name": "Query Auth account 2"
         }
       },
       "onError": "continueErrorOutput",
@@ -277,8 +277,8 @@
       "name": "Instagram Create Carousel Container",
       "credentials": {
         "httpQueryAuth": {
-          "id": "FhYSJdoGK10NqgIX",
-          "name": "Instagram Query Auth"
+          "id": "IxQ6wJEEhQa0WRQd",
+          "name": "Query Auth account 2"
         }
       },
       "onError": "continueErrorOutput",
@@ -304,8 +304,8 @@
       "name": "Instagram Publish Carousel",
       "credentials": {
         "httpQueryAuth": {
-          "id": "FhYSJdoGK10NqgIX",
-          "name": "Instagram Query Auth"
+          "id": "IxQ6wJEEhQa0WRQd",
+          "name": "Query Auth account 2"
         }
       },
       "onError": "continueErrorOutput",
