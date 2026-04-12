@@ -18,7 +18,7 @@
         0,
         0
       ],
-      "id": "5fe26264-ab0f-4890-b6ac-0a2f5657eb2c",
+      "id": "206e0831-bbd8-4495-9b79-1ff7a416faf1",
       "name": "Schedule Trigger"
     },
     {
@@ -42,7 +42,7 @@
         240,
         0
       ],
-      "id": "14d06390-5609-46d9-8bd3-62e08fecd22e",
+      "id": "bb44f24f-46bf-4422-8e71-36733b143837",
       "name": "Get Pending Rows",
       "credentials": {
         "supabaseApi": {
@@ -62,7 +62,7 @@
         480,
         0
       ],
-      "id": "93428f17-617d-49b3-ad95-bfc7be13a5b7",
+      "id": "b73fc198-4d32-44fe-9191-4134862ab93a",
       "name": "Pick Oldest"
     },
     {
@@ -86,7 +86,7 @@
         720,
         0
       ],
-      "id": "aa6f479b-7b22-4467-9bad-fa1693a2c009",
+      "id": "0b3e7605-d90b-4d43-84dd-1172a4779008",
       "name": "Check In-Progress",
       "credentials": {
         "supabaseApi": {
@@ -126,7 +126,7 @@
         960,
         0
       ],
-      "id": "1619cfb1-f66d-4697-ba0c-1f104db89557",
+      "id": "bee92d2f-0663-40a7-9a64-cc950f3e4cdc",
       "name": "If Has In-Progress"
     },
     {
@@ -163,7 +163,7 @@
         1200,
         0
       ],
-      "id": "8463ca4e-d3bf-46f8-8ca0-709cd5a61bc0",
+      "id": "4955a487-0f47-4450-b224-e33b54426f97",
       "name": "Claim Row",
       "credentials": {
         "supabaseApi": {
@@ -182,7 +182,7 @@
         1440,
         0
       ],
-      "id": "b4a49a8b-eeaa-4736-b3fa-e6e01c92470d",
+      "id": "dda9e412-2035-4b7f-b41d-37688e895f2f",
       "name": "Decide Cache"
     },
     {
@@ -216,7 +216,7 @@
         1680,
         0
       ],
-      "id": "e2c03800-24c0-4fa8-9a80-37a9446fe2cc",
+      "id": "21e8aaf0-43fb-4ed6-9bdf-d4bb08eff684",
       "name": "If Cache Hit"
     },
     {
@@ -229,7 +229,7 @@
         1920,
         220
       ],
-      "id": "59f2c161-4319-4d77-b75a-ae6363dc65e8",
+      "id": "b43ee43f-4051-4f3c-b226-19c24f71ea93",
       "name": "Build Fal Items"
     },
     {
@@ -249,7 +249,7 @@
         2160,
         220
       ],
-      "id": "fff6d430-9661-439d-8d79-e1c25c97b5b0",
+      "id": "cee39562-fc87-41b7-8522-e5654f4fed6f",
       "name": "Generate Fal Image",
       "credentials": {
         "httpHeaderAuth": {
@@ -271,7 +271,7 @@
         2400,
         220
       ],
-      "id": "a82692a7-cb76-4ef4-a733-d26773fad214",
+      "id": "d36b7e31-15e3-4b3b-aeec-422c81ad6d0b",
       "name": "Extract Fal URL"
     },
     {
@@ -284,7 +284,7 @@
         2640,
         220
       ],
-      "id": "2459d682-9f12-47ca-84a8-4255991b6eda",
+      "id": "360ed0e9-f8e9-4b4b-b9e3-9ae2f7d1a151",
       "name": "Aggregate Fal URLs"
     },
     {
@@ -321,7 +321,7 @@
         2880,
         220
       ],
-      "id": "ad484528-e293-4089-927e-81530acc93d3",
+      "id": "d4d1f4b4-e72c-4363-a34f-f1a95cd14071",
       "name": "Cache Generated URLs",
       "credentials": {
         "supabaseApi": {
@@ -340,7 +340,7 @@
         3000,
         220
       ],
-      "id": "ad719130-76fc-4ea5-87b4-217d069f8158",
+      "id": "01d92e4f-b0c8-43b4-bec4-fe1d003ecf26",
       "name": "Restore Fal URLs"
     },
     {
@@ -353,12 +353,12 @@
         3120,
         0
       ],
-      "id": "6f4ecac2-a825-4e77-8a11-58878dcd2d93",
+      "id": "a5fe00a0-4c63-4756-99e8-1f2480379b06",
       "name": "Merge Cache Branches"
     },
     {
       "parameters": {
-        "jsCode": "// Phase 4 — Build Render Items\n// Fans out 4 items, one per slide, with the inputs the Render Slide\n// (Placid) node needs:\n//   - image_url   -> bound to the main_image layer\n//   - headline_text -> bound to the headline_text layer\n//\n// Slide 1 uses source_image_url unchanged with the article headline.\n// Slides 2-4 use the fal-generated images with their respective slide\n// body text.\n//\n// Reads from two upstream nodes:\n//   - $('Pick Oldest')         for the row context (always)\n//   - $input.first()           for the fal urls. Both cache branches\n//                              feed the merge with the same canonical\n//                              shape: { record_id, fal_urls, cache_hit }.\n//                              The Restore Fal URLs node ensures the\n//                              cache-miss branch carries that exact\n//                              shape, not the updated-row blob the\n//                              Supabase update node would otherwise emit.\nconst row = $('Pick Oldest').first().json;\nconst upstream = $input.first().json;\nconst fal_urls = upstream.fal_urls;\n\nif (!Array.isArray(fal_urls) || fal_urls.length !== 3) {\n  throw new Error(\n    'Build Render Items: expected fal_urls of length 3, got ' +\n    JSON.stringify(fal_urls) +\n    ' (upstream keys: ' + Object.keys(upstream).join(',') + ')'\n  );\n}\n\nreturn [\n  {\n    json: {\n      slide: 1,\n      record_id: row.id,\n      image_url: row.source_image_url,\n      headline_text: String(row.headline_text || '').slice(0, 220),\n    },\n  },\n  {\n    json: {\n      slide: 2,\n      record_id: row.id,\n      image_url: fal_urls[0],\n      headline_text: String(row.slide_2_text || '').slice(0, 220),\n    },\n  },\n  {\n    json: {\n      slide: 3,\n      record_id: row.id,\n      image_url: fal_urls[1],\n      headline_text: String(row.slide_3_text || '').slice(0, 220),\n    },\n  },\n  {\n    json: {\n      slide: 4,\n      record_id: row.id,\n      image_url: fal_urls[2],\n      headline_text: String(row.slide_4_text || '').slice(0, 220),\n    },\n  },\n];\n"
+        "jsCode": "// Phase 4 — Build Render Items\n// Fans out 4 items, one per slide, with the inputs the Render Slide\n// (Placid `snap_overlay` template) node needs:\n//   - image_url -> bound to the `background_image` layer\n//   - main_text -> bound to the `main_text` layer\n//   - sub_text  -> bound to the `sub_text` layer\n//\n// Slide 1: source photo + article headline + \"Source: <name>\" subtitle\n// Slides 2-4: fal-generated images + headline as main_text + the\n//             slide-specific body line as sub_text. Repeating the\n//             headline as main_text on slides 2-4 keeps the carousel\n//             visually anchored even if a viewer swipes past slide 1.\n//\n// Reads from two upstream nodes:\n//   - $('Pick Oldest') for the row context (always)\n//   - $input.first()   for the fal urls. Both cache branches feed the\n//                      merge with the same canonical shape:\n//                      { record_id, fal_urls, cache_hit }. The\n//                      Restore Fal URLs node guarantees that shape on\n//                      the cache-miss branch (vs. the updated-row blob\n//                      the Supabase update node would otherwise emit).\nconst row = $('Pick Oldest').first().json;\nconst upstream = $input.first().json;\nconst fal_urls = upstream.fal_urls;\n\nif (!Array.isArray(fal_urls) || fal_urls.length !== 3) {\n  throw new Error(\n    'Build Render Items: expected fal_urls of length 3, got ' +\n    JSON.stringify(fal_urls) +\n    ' (upstream keys: ' + Object.keys(upstream).join(',') + ')'\n  );\n}\n\nconst headline = String(row.headline_text || '').slice(0, 220);\nconst slide1_sub = String(\n  row.slide_1_sub_text || ('Source: ' + (row.source_name || ''))\n).slice(0, 220);\n\nreturn [\n  {\n    json: {\n      slide: 1,\n      record_id: row.id,\n      image_url: row.source_image_url,\n      main_text: headline,\n      sub_text: slide1_sub,\n    },\n  },\n  {\n    json: {\n      slide: 2,\n      record_id: row.id,\n      image_url: fal_urls[0],\n      main_text: headline,\n      sub_text: String(row.slide_2_text || '').slice(0, 220),\n    },\n  },\n  {\n    json: {\n      slide: 3,\n      record_id: row.id,\n      image_url: fal_urls[1],\n      main_text: headline,\n      sub_text: String(row.slide_3_text || '').slice(0, 220),\n    },\n  },\n  {\n    json: {\n      slide: 4,\n      record_id: row.id,\n      image_url: fal_urls[2],\n      main_text: headline,\n      sub_text: String(row.slide_4_text || '').slice(0, 220),\n    },\n  },\n];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -366,18 +366,18 @@
         3360,
         0
       ],
-      "id": "3e8dbefe-9727-4e6a-9b6d-55c9c3e81a81",
+      "id": "2eeb05d8-1d0f-4b2c-9f18-00029ad296cf",
       "name": "Build Render Items"
     },
     {
       "parameters": {
         "template_id": {
           "__rl": true,
-          "value": "bazsa46k83jxi",
+          "value": "yxbgkx7gwh3dx",
           "mode": "id"
         },
         "configurationMode": "advanced",
-        "layersJson": "={\n  \"headline_text\": { \"text\": \"{{ $json.headline_text }}\" },\n  \"main_image\":    { \"image\": \"{{ $json.image_url }}\" },\n  \"background_color\": { \"fill\": \"#F3F3F3\" }\n}",
+        "layersJson": "={\n  \"background_image\": { \"image\": \"{{ $json.image_url }}\" },\n  \"main_text\":        { \"text\":  \"{{ $json.main_text }}\" },\n  \"sub_text\":         { \"text\":  \"{{ $json.sub_text }}\" }\n}",
         "additionalFields": {}
       },
       "type": "n8n-nodes-placid.placid",
@@ -386,7 +386,7 @@
         3600,
         0
       ],
-      "id": "89751f2b-ed0b-4b7c-9947-2a1cc8821685",
+      "id": "f483608c-6df0-431b-bad8-8d9e7dfae6e3",
       "name": "Render Slide",
       "credentials": {
         "placidApi": {
@@ -408,7 +408,7 @@
         3840,
         0
       ],
-      "id": "d8354310-0bf0-4cc7-a60e-d35af818ece3",
+      "id": "ed491923-ca59-49cf-9144-9059cf1eee8a",
       "name": "Aggregate Final URLs"
     },
     {
@@ -421,7 +421,7 @@
         4080,
         0
       ],
-      "id": "d7b33fa5-e0eb-448c-a5ce-682b50f6777a",
+      "id": "bfb49c93-dc7e-4a72-bdeb-d215d518c37f",
       "name": "Build Publish Payload"
     },
     {
@@ -439,7 +439,7 @@
         4320,
         0
       ],
-      "id": "b884625c-b374-461d-8924-81071ec7956f",
+      "id": "673fb0da-a224-4380-b376-7ccbff9ecb41",
       "name": "Call Shared IG Publisher"
     }
   ],

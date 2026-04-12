@@ -168,12 +168,18 @@ FAL_NEGATIVE_PROMPT = (
     "distorted face"
 )
 
-# Reuse the existing Twitter Card Placid template for all 4 slides.
-# It already exposes a `headline_text` text layer over a `main_image`
-# image layer with a light background, which is exactly the layout we
-# want for news cards. No new template work required to ship Phase 4.
-# Edit this constant if you create a news-card-specific template later.
-PLACID_TEMPLATE_ID = "bazsa46k83jxi"
+# Reuse the existing `snap_overlay` Placid template for all 4 slides.
+# Layers (verified live via the Placid REST API):
+#   - background_image      (picture)    -> source photo or fal image
+#   - dark overlay rectangle (rectangle) -> readability scrim, leave alone
+#   - main_text             (text)       -> headline / prominent line
+#   - sub_text              (text)       -> subtitle / body line
+# This is the same template the Snap Overlay pipeline already uses, so
+# Phase 4 ships without any new Placid design work. NOTE: the Twitter
+# Card template (bazsa46k83jxi) is text-only — it has NO image layer
+# and no `headline_text` layer, so writing to it silently rendered the
+# blank template. Don't go back to it without adding image layers first.
+PLACID_TEMPLATE_ID = "yxbgkx7gwh3dx"
 
 # Retry cache TTL. After a hard failure mid-pipeline, retries within this
 # window will reuse the previously-generated fal images instead of paying
@@ -484,23 +490,25 @@ return [{ json: $('Aggregate Fal URLs').first().json }];
 
 BUILD_RENDER_CODE = r"""// Phase 4 — Build Render Items
 // Fans out 4 items, one per slide, with the inputs the Render Slide
-// (Placid) node needs:
-//   - image_url   -> bound to the main_image layer
-//   - headline_text -> bound to the headline_text layer
+// (Placid `snap_overlay` template) node needs:
+//   - image_url -> bound to the `background_image` layer
+//   - main_text -> bound to the `main_text` layer
+//   - sub_text  -> bound to the `sub_text` layer
 //
-// Slide 1 uses source_image_url unchanged with the article headline.
-// Slides 2-4 use the fal-generated images with their respective slide
-// body text.
+// Slide 1: source photo + article headline + "Source: <name>" subtitle
+// Slides 2-4: fal-generated images + headline as main_text + the
+//             slide-specific body line as sub_text. Repeating the
+//             headline as main_text on slides 2-4 keeps the carousel
+//             visually anchored even if a viewer swipes past slide 1.
 //
 // Reads from two upstream nodes:
-//   - $('Pick Oldest')         for the row context (always)
-//   - $input.first()           for the fal urls. Both cache branches
-//                              feed the merge with the same canonical
-//                              shape: { record_id, fal_urls, cache_hit }.
-//                              The Restore Fal URLs node ensures the
-//                              cache-miss branch carries that exact
-//                              shape, not the updated-row blob the
-//                              Supabase update node would otherwise emit.
+//   - $('Pick Oldest') for the row context (always)
+//   - $input.first()   for the fal urls. Both cache branches feed the
+//                      merge with the same canonical shape:
+//                      { record_id, fal_urls, cache_hit }. The
+//                      Restore Fal URLs node guarantees that shape on
+//                      the cache-miss branch (vs. the updated-row blob
+//                      the Supabase update node would otherwise emit).
 const row = $('Pick Oldest').first().json;
 const upstream = $input.first().json;
 const fal_urls = upstream.fal_urls;
@@ -513,13 +521,19 @@ if (!Array.isArray(fal_urls) || fal_urls.length !== 3) {
   );
 }
 
+const headline = String(row.headline_text || '').slice(0, 220);
+const slide1_sub = String(
+  row.slide_1_sub_text || ('Source: ' + (row.source_name || ''))
+).slice(0, 220);
+
 return [
   {
     json: {
       slide: 1,
       record_id: row.id,
       image_url: row.source_image_url,
-      headline_text: String(row.headline_text || '').slice(0, 220),
+      main_text: headline,
+      sub_text: slide1_sub,
     },
   },
   {
@@ -527,7 +541,8 @@ return [
       slide: 2,
       record_id: row.id,
       image_url: fal_urls[0],
-      headline_text: String(row.slide_2_text || '').slice(0, 220),
+      main_text: headline,
+      sub_text: String(row.slide_2_text || '').slice(0, 220),
     },
   },
   {
@@ -535,7 +550,8 @@ return [
       slide: 3,
       record_id: row.id,
       image_url: fal_urls[1],
-      headline_text: String(row.slide_3_text || '').slice(0, 220),
+      main_text: headline,
+      sub_text: String(row.slide_3_text || '').slice(0, 220),
     },
   },
   {
@@ -543,7 +559,8 @@ return [
       slide: 4,
       record_id: row.id,
       image_url: fal_urls[2],
-      headline_text: String(row.slide_4_text || '').slice(0, 220),
+      main_text: headline,
+      sub_text: String(row.slide_4_text || '').slice(0, 220),
     },
   },
 ];
@@ -903,11 +920,15 @@ def build_build_render() -> Dict[str, Any]:
 
 
 def build_render(creds: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
+    # Layer names verified live via the Placid REST API against template
+    # `yxbgkx7gwh3dx` (snap_overlay): background_image, main_text, sub_text.
+    # The dark overlay rectangle is left untouched (its built-in fill is
+    # already a translucent scrim that ensures text legibility).
     layers_json = (
         "={\n"
-        '  "headline_text": { "text": "{{ $json.headline_text }}" },\n'
-        '  "main_image":    { "image": "{{ $json.image_url }}" },\n'
-        '  "background_color": { "fill": "#F3F3F3" }\n'
+        '  "background_image": { "image": "{{ $json.image_url }}" },\n'
+        '  "main_text":        { "text":  "{{ $json.main_text }}" },\n'
+        '  "sub_text":         { "text":  "{{ $json.sub_text }}" }\n'
         "}"
     )
     return {
