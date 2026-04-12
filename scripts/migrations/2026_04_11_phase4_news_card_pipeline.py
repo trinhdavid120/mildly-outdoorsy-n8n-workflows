@@ -289,11 +289,24 @@ return [{ json: rows[0] }];
 
 
 IF_INPROGRESS_CONDITIONS = {
-    # IF node v2 conditions. The "true" branch fires when there is at
-    # least one row already in 'processing' (i.e. another tick is mid-run);
-    # we wire that branch to a no-op so a second scheduler tick can never
-    # claim the same row. The "false" branch (clear to claim) wires to
-    # Claim Row.
+    # IF node v2 conditions. The "true" branch fires when the upstream
+    # Check In-Progress query returned a real row (i.e. another tick is
+    # mid-run); we wire that branch to a no-op so a second scheduler tick
+    # can never claim the same work. The "false" branch (clear to claim)
+    # wires to Claim Row.
+    #
+    # NB: we *cannot* count items here because Check In-Progress has
+    # alwaysOutputData=true (required to keep the chain alive when the
+    # query returns zero rows). With that flag, an empty result still
+    # emits one fake item `{json: {}}`, so a count check would always
+    # see 1 and the watchdog would always abort.
+    #
+    # Instead, the IF node runs once per input item and checks whether
+    # that item carries a real `id`. The empty fake item has no id ->
+    # leftValue coalesces to '' -> notEquals '' is false -> claim path.
+    # A real processing row has a uuid id -> notEquals '' is true ->
+    # abort path. If multiple processing rows exist, the IF runs multiple
+    # times and the abort fires on every one of them, which is fine.
     "options": {
         "caseSensitive": True,
         "leftValue": "",
@@ -303,9 +316,9 @@ IF_INPROGRESS_CONDITIONS = {
     "conditions": [
         {
             "id": "in-progress-check",
-            "leftValue": "={{ $('" + N_CHECK_INPROGRESS + "').all().length }}",
-            "rightValue": 0,
-            "operator": {"type": "number", "operation": "gt"},
+            "leftValue": "={{ $json.id || '' }}",
+            "rightValue": "",
+            "operator": {"type": "string", "operation": "notEquals"},
         }
     ],
     "combinator": "and",
@@ -449,16 +462,33 @@ BUILD_RENDER_CODE = r"""// Phase 4 — Build Render Items
 //
 // Reads from two upstream nodes:
 //   - $('Pick Oldest')         for the row context (always)
-//   - $input                   for { fal_urls } from either branch of
+//   - $input                   for the fal urls from either branch of
 //                              the cache-hit / cache-miss merge
+//
+// The merged stream carries different item shapes depending on which
+// branch fed it:
+//   - Cache hit (Decide Cache):    { cache_hit: true, fal_urls: [...] }
+//   - Cache miss (Cache Generated URLs):
+//        the Supabase update node may pass through the input
+//        ({ record_id, fal_urls, ... }) OR emit the updated row
+//        ({ id, ..., last_generated_image_urls: [...] }) depending on
+//        n8n's Supabase node behavior. We check both shapes.
 const row = $('Pick Oldest').first().json;
 const upstream = $input.first().json;
-const fal_urls = upstream.fal_urls || [];
+
+let fal_urls = upstream.fal_urls;
+if (!fal_urls && upstream.last_generated_image_urls) {
+  fal_urls = upstream.last_generated_image_urls;
+  if (typeof fal_urls === 'string') {
+    try { fal_urls = JSON.parse(fal_urls); } catch (e) { fal_urls = null; }
+  }
+}
 
 if (!Array.isArray(fal_urls) || fal_urls.length !== 3) {
   throw new Error(
     'Build Render Items: expected fal_urls of length 3, got ' +
-    JSON.stringify(fal_urls)
+    JSON.stringify(fal_urls) +
+    ' (upstream keys: ' + Object.keys(upstream).join(',') + ')'
   );
 }
 
