@@ -914,8 +914,8 @@ def build_render(creds: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
         "parameters": {
             "template_id": {"__rl": True, "value": PLACID_TEMPLATE_ID, "mode": "id"},
             "configurationMode": "advanced",
-            "layers": {"layerItems": []},
             "layersJson": layers_json,
+            "additionalFields": {},
         },
         "type": "n8n-nodes-placid.placid",
         "typeVersion": 1,
