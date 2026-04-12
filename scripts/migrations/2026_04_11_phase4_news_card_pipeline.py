@@ -205,6 +205,7 @@ N_GEN_FAL = "Generate Fal Image"
 N_EXTRACT_FAL = "Extract Fal URL"
 N_AGG_FAL = "Aggregate Fal URLs"
 N_CACHE_URLS = "Cache Generated URLs"
+N_RESTORE_FAL = "Restore Fal URLs"
 N_MERGE_CACHE = "Merge Cache Branches"
 N_BUILD_RENDER = "Build Render Items"
 N_RENDER = "Render Slide"
@@ -414,20 +415,34 @@ EXTRACT_FAL_CODE = r"""// Phase 4 — Extract Fal URL
 // We always request num_images=1 so we just take images[0].url. If the
 // shape is missing we throw — better to surface the broken response in
 // the execution log than to silently push a placeholder url to Placid.
-const j = $input.first().json;
-const url = j && j.images && j.images[0] && j.images[0].url;
-if (!url) {
-  throw new Error('Fal response missing images[0].url: ' + JSON.stringify(j).slice(0, 500));
-}
-// Re-attach the slide context from Build Fal Items so the next node
-// (Aggregate Fal URLs) can sort by slide index.
-const ctx = $('Build Fal Items').itemMatching($itemIndex).json;
-return [{
-  json: {
-    slide: ctx.slide,
-    fal_image_url: url,
-  },
-}];
+//
+// IMPORTANT: this node must process ALL upstream items, not just the
+// first one. Generate Fal Image runs once per Build Fal Items item
+// (3 items, one per slide 2/3/4) and emits 3 responses. The default
+// n8n code-node mode is "Run Once for All Items", in which $input.first()
+// only sees the FIRST response — silently dropping the other two URLs
+// and producing a fal_urls array of length 1 downstream. Iterate
+// $input.all() and emit one item per response instead.
+return $input.all().map((item, idx) => {
+  const j = item.json || {};
+  const url = j && j.images && j.images[0] && j.images[0].url;
+  if (!url) {
+    throw new Error(
+      'Fal response ' + idx + ' missing images[0].url: ' +
+      JSON.stringify(j).slice(0, 500)
+    );
+  }
+  // Re-attach the slide context from the matching Build Fal Items item
+  // so Aggregate Fal URLs can sort by slide index. itemMatching(idx)
+  // looks up the source item at the same output index.
+  const ctx = $('Build Fal Items').itemMatching(idx).json;
+  return {
+    json: {
+      slide: ctx.slide,
+      fal_image_url: url,
+    },
+  };
+});
 """
 
 
@@ -450,6 +465,23 @@ return [{
 """
 
 
+RESTORE_FAL_CODE = r"""// Phase 4 — Restore Fal URLs
+// Cache Generated URLs is a Supabase update node, and n8n's Supabase
+// node v1 emits the *updated row* downstream rather than passing the
+// input item through. That means by the time data reaches Merge Cache
+// Branches the cache-miss branch's item shape is no longer
+// { record_id, fal_urls } — it's the full news_card_queue row, with the
+// fal urls hidden inside last_generated_image_urls (which n8n may
+// surface as a JSON-encoded string depending on round-trip quirks).
+//
+// Sidestep the whole problem by re-emitting the canonical
+// { record_id, fal_urls, cache_hit: false } shape sourced directly from
+// Aggregate Fal URLs. The DB update was a side effect; this node
+// restores the data shape we actually want flowing downstream.
+return [{ json: $('Aggregate Fal URLs').first().json }];
+"""
+
+
 BUILD_RENDER_CODE = r"""// Phase 4 — Build Render Items
 // Fans out 4 items, one per slide, with the inputs the Render Slide
 // (Placid) node needs:
@@ -462,27 +494,16 @@ BUILD_RENDER_CODE = r"""// Phase 4 — Build Render Items
 //
 // Reads from two upstream nodes:
 //   - $('Pick Oldest')         for the row context (always)
-//   - $input                   for the fal urls from either branch of
-//                              the cache-hit / cache-miss merge
-//
-// The merged stream carries different item shapes depending on which
-// branch fed it:
-//   - Cache hit (Decide Cache):    { cache_hit: true, fal_urls: [...] }
-//   - Cache miss (Cache Generated URLs):
-//        the Supabase update node may pass through the input
-//        ({ record_id, fal_urls, ... }) OR emit the updated row
-//        ({ id, ..., last_generated_image_urls: [...] }) depending on
-//        n8n's Supabase node behavior. We check both shapes.
+//   - $input.first()           for the fal urls. Both cache branches
+//                              feed the merge with the same canonical
+//                              shape: { record_id, fal_urls, cache_hit }.
+//                              The Restore Fal URLs node ensures the
+//                              cache-miss branch carries that exact
+//                              shape, not the updated-row blob the
+//                              Supabase update node would otherwise emit.
 const row = $('Pick Oldest').first().json;
 const upstream = $input.first().json;
-
-let fal_urls = upstream.fal_urls;
-if (!fal_urls && upstream.last_generated_image_urls) {
-  fal_urls = upstream.last_generated_image_urls;
-  if (typeof fal_urls === 'string') {
-    try { fal_urls = JSON.parse(fal_urls); } catch (e) { fal_urls = null; }
-  }
-}
+const fal_urls = upstream.fal_urls;
 
 if (!Array.isArray(fal_urls) || fal_urls.length !== 3) {
   throw new Error(
@@ -845,6 +866,20 @@ def build_cache_urls(creds: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
     }
 
 
+def build_restore_fal() -> Dict[str, Any]:
+    return {
+        "parameters": {"jsCode": RESTORE_FAL_CODE},
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        # Sit between Cache Generated URLs (X=12) and Merge Cache Branches
+        # (X=13) on the bottom rail. Give it a half-step offset so the
+        # canvas isn't too cramped.
+        "position": [int(X_STEP * 12.5), Y_BOTTOM],
+        "id": _new_id(),
+        "name": N_RESTORE_FAL,
+    }
+
+
 def build_merge_cache() -> Dict[str, Any]:
     return {
         "parameters": {"mode": "append"},
@@ -968,7 +1003,8 @@ def build_connections() -> Dict[str, Any]:
         N_GEN_FAL: {"main": [[link(N_EXTRACT_FAL)]]},
         N_EXTRACT_FAL: {"main": [[link(N_AGG_FAL)]]},
         N_AGG_FAL: {"main": [[link(N_CACHE_URLS)]]},
-        N_CACHE_URLS: {"main": [[link(N_MERGE_CACHE, 1)]]},
+        N_CACHE_URLS: {"main": [[link(N_RESTORE_FAL)]]},
+        N_RESTORE_FAL: {"main": [[link(N_MERGE_CACHE, 1)]]},
         N_MERGE_CACHE: {"main": [[link(N_BUILD_RENDER)]]},
         N_BUILD_RENDER: {"main": [[link(N_RENDER)]]},
         N_RENDER: {"main": [[link(N_AGG_FINAL)]]},
@@ -997,6 +1033,7 @@ def assemble_workflow(existing_id: Optional[str]) -> Dict[str, Any]:
         build_extract_fal(),
         build_agg_fal(),
         build_cache_urls(creds),
+        build_restore_fal(),
         build_merge_cache(),
         build_build_render(),
         build_render(creds),
