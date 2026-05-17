@@ -79,27 +79,38 @@ class N8NClient:
                 return data["data"] if isinstance(data, dict) and "data" in data else data
         fail(f"Workflow {workflow_id} not found")
 
+    def create_workflow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        data = self._request("POST", "/api/v1/workflows", payload)
+        if isinstance(data, dict) and "data" in data:
+            return data["data"]
+        return data
+
     def update_workflow(self, workflow_id: str, payload: Dict[str, Any]) -> Any:
         return self._request("PUT", f"/api/v1/workflows/{workflow_id}", payload)
 
     def set_workflow_active(self, workflow_id: str, active: bool) -> Any:
-        payload = {"active": active}
-        return self._request("POST", f"/api/v1/workflows/{workflow_id}/activate", payload)
+        # Always deactivate first to force n8n to re-register schedule
+        # triggers after a PUT update. Without this cycle, cron schedules
+        # silently stop firing.
+        try:
+            self._request("POST", f"/api/v1/workflows/{workflow_id}/deactivate", {})
+        except Exception:
+            pass  # May already be inactive
+        if active:
+            return self._request("POST", f"/api/v1/workflows/{workflow_id}/activate", {})
+        return None
 
 
 def resolve_live_workflow(
     client: N8NClient, workflow_id: str, live_name: str
-) -> Tuple[str, Dict[str, Any]]:
+) -> Tuple[str, Optional[Dict[str, Any]]]:
     workflow_id = workflow_id.strip()
     if workflow_id:
         return workflow_id, client.get_workflow(workflow_id)
 
     matches = [wf for wf in client.list_workflows() if wf.get("name") == live_name]
     if not matches:
-        fail(
-            f"No live workflow matched live_name={live_name!r}. "
-            "Fill n8n_workflow_id in workflow-manifest.json."
-        )
+        return "", None
     if len(matches) > 1:
         ids = ", ".join(str(wf.get("id")) for wf in matches)
         fail(
@@ -264,19 +275,39 @@ def main() -> None:
         )
 
         resolved_id, existing = resolve_live_workflow(client, workflow_id, live_name)
-        print(f"[resolve] {workflow['name']} -> {resolved_id} ({live_name})")
         all_refs.extend(collect_credential_references(workflow["name"], export_json))
-        if args.dry_run:
-            continue
 
-        payload = build_payload(
-            export_json=export_json,
-            existing_workflow=existing,
-            workflow_id=resolved_id,
-        )
-        client.update_workflow(resolved_id, payload)
-        client.set_workflow_active(resolved_id, activate_after_sync)
-        print(f"[update] synced {workflow['file']}")
+        if existing is None:
+            print(f"[resolve] {workflow['name']} -> NEW ({live_name})")
+            if args.dry_run:
+                print(f"[dry-run] would create {workflow['file']}")
+                continue
+            payload = build_payload(
+                export_json=export_json,
+                existing_workflow={},
+                workflow_id="",
+            )
+            payload["name"] = live_name
+            created = client.create_workflow(payload)
+            new_id = str(created.get("id", ""))
+            client.set_workflow_active(new_id, activate_after_sync)
+            print(f"[create] created {workflow['file']} -> id={new_id}")
+            print(
+                f"[create] UPDATE workflow-manifest.json: set "
+                f"{workflow['name']}.n8n_workflow_id = \"{new_id}\""
+            )
+        else:
+            print(f"[resolve] {workflow['name']} -> {resolved_id} ({live_name})")
+            if args.dry_run:
+                continue
+            payload = build_payload(
+                export_json=export_json,
+                existing_workflow=existing,
+                workflow_id=resolved_id,
+            )
+            client.update_workflow(resolved_id, payload)
+            client.set_workflow_active(resolved_id, activate_after_sync)
+            print(f"[update] synced {workflow['file']}")
 
     report_credential_references(all_refs)
 

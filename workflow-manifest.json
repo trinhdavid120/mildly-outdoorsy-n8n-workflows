@@ -11,7 +11,7 @@
       "live_name": "Mildly Outdoorsy - Carousel Pipeline - SAFE #6",
       "n8n_workflow_id": "cvGzpoqABQPWTfl2",
       "activate_after_sync": true,
-      "purpose": "Product carousel generation and publishing"
+      "purpose": "Consume product_carousel_queue, render 5 slides via fal img2img + Placid (Template A build-up + Template B text + product reveal), hand off to Shared IG Publisher"
     },
     {
       "name": "newsapi_ingest",
@@ -26,7 +26,7 @@
       "file": "Mildly Outdoorsy - Twitter Card Pipeline - SAFE #6 (1).json",
       "live_name": "Mildly Outdoorsy - Twitter Card Pipeline - SAFE #6",
       "n8n_workflow_id": "eixeRFqSMWNOag50",
-      "activate_after_sync": true,
+      "activate_after_sync": false,
       "purpose": "Render and publish pending twitter_card_balanced rows"
     },
     {
@@ -52,6 +52,55 @@
       "n8n_workflow_id": "SBE2CO4MUYk82PUn",
       "activate_after_sync": true,
       "purpose": "Consume news_card_queue, render 4 slides via fal img2img + Placid, hand off to Shared IG Publisher"
+    },
+    {
+      "name": "watchdog",
+      "file": "Mildly Outdoorsy - Watchdog - SAFE #6.json",
+      "live_name": "Mildly Outdoorsy - Watchdog - SAFE #6",
+      "n8n_workflow_id": "PaaT2oPcd03INCYR",
+      "activate_after_sync": true,
+      "purpose": "Reap rows stuck in status='processing' across product_carousel_queue and news_card_queue every 5 minutes; requeue if retry_count<3, terminate otherwise",
+      "watchdog_credential_id": "HoWMckDiNjqGmmzj"
+    },
+    {
+      "name": "auto_reply_comments",
+      "file": "Mildly Outdoorsy - Auto Reply Comments.json",
+      "live_name": "Mildly Outdoorsy - Auto Reply Comments",
+      "n8n_workflow_id": "NQkiIdmWr2Ape4OM",
+      "activate_after_sync": true,
+      "purpose": "Monitor recent IG posts for new comments every 30 min, generate AI replies via GPT-4o-mini, auto-reply or auto-hide spam/hateful comments"
+    },
+    {
+      "name": "lifestyle_mockup_pipeline",
+      "file": "Mildly Outdoorsy - Lifestyle Mockup Pipeline.json",
+      "live_name": "Mildly Outdoorsy - Lifestyle Mockup Pipeline",
+      "n8n_workflow_id": "oNpjaQfP41QKLwBg",
+      "activate_after_sync": true,
+      "purpose": "Daily: pick lifestyle image + random design combos, generate product mockup via ChatGPT image gen, save carousel assets to Google Drive Mockup Review folder"
+    },
+    {
+      "name": "lifestyle_mockup_publisher",
+      "file": "Mildly Outdoorsy - Lifestyle Mockup Publisher.json",
+      "live_name": "Mildly Outdoorsy - Lifestyle Mockup Publisher",
+      "n8n_workflow_id": "Hj9Z1BajPHO54e1J",
+      "activate_after_sync": true,
+      "purpose": "Daily 2pm PDT: detect approved mockups moved out of Review folder, queue and publish via Shared IG Publisher"
+    },
+    {
+      "name": "error_alert",
+      "file": "Mildly Outdoorsy - Error Alert.json",
+      "live_name": "Mildly Outdoorsy - Error Alert",
+      "n8n_workflow_id": "O7MGIgi7TQuPDmpi",
+      "activate_after_sync": true,
+      "purpose": "Error Trigger workflow — catches unhandled crashes from all other workflows and sends Slack alerts with workflow name, failed node, error message, and next steps"
+    },
+    {
+      "name": "tiktok_video_factory",
+      "file": "Mildly Outdoorsy - TikTok Video Factory.json",
+      "live_name": "Mildly Outdoorsy - TikTok Video Factory",
+      "n8n_workflow_id": "",
+      "activate_after_sync": false,
+      "purpose": "Batch-generate TikTok 'spotted in the wild' videos: for each design, generate start frame (back) + end frame (front with design) via ChatGPT image gen, consistency-check with GPT-4o vision, upload frame pairs to Google Drive, then generate video via Higgsfield"
     }
   ]
 }
