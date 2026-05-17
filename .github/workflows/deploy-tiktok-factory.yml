@@ -1,0 +1,35 @@
+name: Deploy TikTok Video Factory
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "Mildly Outdoorsy - TikTok Video Factory.json"
+      - "scripts/deploy_workflows_to_n8n.py"
+      - ".github/workflows/deploy-tiktok-factory.yml"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare runner directories
+        run: |
+          mkdir -p "$HOME/actions-runner/_work/_temp"
+          mkdir -p "$HOME/actions-runner/_work/_tool"
+
+      - name: Dry run
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/deploy_workflows_to_n8n.py --only tiktok_video_factory --dry-run
+
+      - name: Deploy TikTok Video Factory to n8n
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/deploy_workflows_to_n8n.py --only tiktok_video_factory

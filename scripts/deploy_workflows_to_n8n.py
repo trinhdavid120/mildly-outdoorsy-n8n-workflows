@@ -229,6 +229,12 @@ def main() -> None:
         action="store_true",
         help="Only print the credential reference report; do not deploy.",
     )
+    parser.add_argument(
+        "--only",
+        nargs="+",
+        metavar="NAME",
+        help="Only deploy these workflow names (as listed in manifest).",
+    )
     args = parser.parse_args()
 
     base_url = os.environ.get("N8N_BASE_URL")
@@ -245,6 +251,13 @@ def main() -> None:
     workflows = manifest.get("workflows", [])
     if not workflows:
         fail("No workflows found in manifest")
+
+    if args.only:
+        only_set = set(args.only)
+        workflows = [w for w in workflows if w["name"] in only_set]
+        missing = only_set - {w["name"] for w in workflows}
+        if missing:
+            fail(f"--only names not found in manifest: {', '.join(sorted(missing))}")
 
     if args.check_credentials:
         all_refs: List[Tuple[str, str, str, str, str]] = []
