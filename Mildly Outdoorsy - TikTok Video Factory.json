@@ -1,0 +1,589 @@
+{
+  "name": "Mildly Outdoorsy - TikTok Video Factory",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "tvf-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "operation": "list",
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1fpWOt20IJGkMb_DgBMtjTb291Gu_5a9x"
+        },
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "MyDrive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "1fpWOt20IJGkMb_DgBMtjTb291Gu_5a9x"
+          }
+        },
+        "options": {}
+      },
+      "id": "tvf-list-files",
+      "name": "List Design Files",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [260, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ZHc2tNwCdK85mHvM",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter to PNG files and pick the best version for black shirts.\n// _W.png = white ink for dark shirts (preferred)\n// plain C###.png = colorful designs that work on any shirt\n// Exclude _B.png (black ink for light shirts)\n\nconst allFiles = $input.all().map(i => i.json);\nconst pngs = allFiles.filter(f => f.name && f.name.endsWith('.png'));\n\n// Group by design number\nconst byDesign = {};\nfor (const f of pngs) {\n  const match = f.name.match(/^(C\\d+)/);\n  if (!match) continue;\n  const designId = match[1];\n  if (!byDesign[designId]) byDesign[designId] = [];\n  byDesign[designId].push(f);\n}\n\n// For each design, pick the best file for black shirts\nconst results = [];\nfor (const [designId, files] of Object.entries(byDesign)) {\n  // Prefer _W variant (white ink for dark shirts)\n  let pick = files.find(f => f.name.includes('_W'));\n  // Fall back to plain (no _B or _W suffix)\n  if (!pick) {\n    pick = files.find(f => f.name === `${designId}.png`);\n  }\n  // Skip if only _B variant exists (black ink = bad on black shirt)\n  if (!pick) continue;\n  \n  results.push({\n    json: {\n      designId,\n      fileName: pick.name,\n      fileId: pick.id,\n      mimeType: pick.mimeType,\n      retryCount: 0\n    }\n  });\n}\n\n// Sort by design ID\nresults.sort((a, b) => a.json.designId.localeCompare(b.json.designId, undefined, { numeric: true }));\n\nreturn results;"
+      },
+      "id": "tvf-filter-designs",
+      "name": "Filter Black Shirt Designs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "tvf-split-batch",
+      "name": "Loop Over Designs",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [780, 300]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.fileId }}"
+        },
+        "options": {}
+      },
+      "id": "tvf-download-design",
+      "name": "Download Design PNG",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1040, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ZHc2tNwCdK85mHvM",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst designId = item.json.designId;\n\nconst scenes = [\n  {\n    id: 'grocery_meat',\n    name: 'Grocery Store Meat Section',\n    setting: 'the open deli and meat section at the back of a grocery store with refrigerated meat cases along the walls, hanging aisle signs, fluorescent ceiling lights, and tile floor',\n    prop: 'carrying a handheld shopping basket',\n    bystander: 'A woman in a cream jacket with curly hair pushes her cart nearby',\n    foreground: 'a shopping cart in the immediate foreground',\n    lighting: 'Harsh fluorescent overhead lighting'\n  },\n  {\n    id: 'coffee_shop',\n    name: 'Coffee Shop',\n    setting: 'a busy coffee shop with wood tables, exposed brick walls, warm pendant lighting, and a barista counter with an espresso machine in the background',\n    prop: 'holding a to-go coffee cup in one hand',\n    bystander: 'A barista behind the counter is making a drink',\n    foreground: 'a table with a laptop and coffee cup in the immediate foreground',\n    lighting: 'Warm cozy indoor lighting'\n  },\n  {\n    id: 'dog_park',\n    name: 'Dog Park',\n    setting: 'a fenced dog park with green grass, a few benches, trees in the background, and dogs playing in the open area',\n    prop: 'holding a dog leash with a medium-sized dog beside him',\n    bystander: 'Another dog owner is throwing a ball for their dog nearby',\n    foreground: 'a chain-link fence partially visible on the left edge',\n    lighting: 'Bright afternoon sunlight with natural shadows'\n  },\n  {\n    id: 'brewery',\n    name: 'Brewery Taproom',\n    setting: 'a casual brewery taproom with a long wooden bar, draft tap handles, industrial pendant lights, exposed ductwork on the ceiling, and tall stools',\n    prop: 'holding a pint glass of beer',\n    bystander: 'A bartender is pouring a draft behind the bar',\n    foreground: 'the edge of the bar with a half-full pint glass in the immediate foreground',\n    lighting: 'Dim warm industrial lighting'\n  },\n  {\n    id: 'farmers_market',\n    name: 'Farmers Market',\n    setting: 'an outdoor farmers market with white canopy tents, vendor tables displaying fresh produce and flowers, and a gravel or paved walkway',\n    prop: 'carrying a canvas tote bag with vegetables sticking out',\n    bystander: 'A vendor arranging produce on their table nearby',\n    foreground: 'a crate of peaches on a vendor table in the immediate foreground',\n    lighting: 'Bright morning sunlight with dappled shade from canopy tents'\n  },\n  {\n    id: 'gas_station',\n    name: 'Gas Station',\n    setting: 'a gas station with fuel pumps, a convenience store building, overhead canopy with fluorescent lights, and parked cars',\n    prop: 'walking away from the pump toward the store, keys in hand',\n    bystander: 'Another customer is pumping gas at the next pump',\n    foreground: 'the edge of a fuel pump visible on the right side',\n    lighting: 'Daylight with harsh shadows under the gas station canopy'\n  },\n  {\n    id: 'laundromat',\n    name: 'Laundromat',\n    setting: 'a retro laundromat with a row of front-loading washing machines and dryers, a folding table, linoleum floor, and fluorescent tube lights on the ceiling',\n    prop: 'leaning against a dryer with his arms crossed',\n    bystander: 'An older woman folding clothes at the folding table',\n    foreground: 'an open washing machine door in the immediate foreground',\n    lighting: 'Flat fluorescent lighting with a slight yellow tint'\n  },\n  {\n    id: 'home_improvement',\n    name: 'Home Improvement Store',\n    setting: 'a large home improvement store with tall industrial shelving stocked with lumber, tools, and hardware, wide concrete aisles, and a high warehouse ceiling with hanging signs',\n    prop: 'pushing an orange flatbed cart with a few boards on it',\n    bystander: 'A store employee in an orange apron walking down the aisle',\n    foreground: 'a shelf of paint cans partially visible on the left edge',\n    lighting: 'Bright industrial warehouse fluorescent lighting'\n  },\n  {\n    id: 'campsite',\n    name: 'Campsite',\n    setting: 'a campsite clearing with a tent, camp chairs around a fire ring, a cooler, pine trees surrounding the site, and a dirt and pine needle ground',\n    prop: 'standing near the fire ring holding a camping mug',\n    bystander: 'Someone sitting in a camp chair in the background',\n    foreground: 'a camp chair with a blanket draped over it in the immediate foreground',\n    lighting: 'Golden hour sunlight filtering through the pine trees'\n  },\n  {\n    id: 'target_store',\n    name: 'Target Store',\n    setting: 'the main aisle of a Target store with the distinctive red and white branding, endcap displays, bright overhead lights, shiny floor, and shoppers with red carts',\n    prop: 'pushing a red Target shopping cart',\n    bystander: 'A mom with kids browsing an endcap display nearby',\n    foreground: 'the corner of a red shopping cart in the immediate foreground',\n    lighting: 'Bright clean retail fluorescent lighting'\n  }\n];\n\n// Pick a random scene using a simple hash of the designId for reproducibility\nconst hash = designId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);\nconst scene = scenes[hash % scenes.length];\n\nreturn [{\n  json: {\n    ...item.json,\n    scene\n  },\n  binary: item.binary\n}];"
+      },
+      "id": "tvf-pick-scene",
+      "name": "Pick Random Scene",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst s = item.json.scene;\n\nconst prompt = `Vertical 9:16 realistic photo. Wide shot of ${s.setting}. A man is in the mid-distance with his back mostly to the camera, wearing a plain black t-shirt with no visible design on the back, black baseball cap, grey sweatpants, and black sneakers. He is ${s.prop}. ${s.bystander}. A few other people are scattered around casually. The camera is low, around waist height, with ${s.foreground}. The shot is slightly off-center and tilted, candid and unplanned, as if someone is secretly taking a photo on their phone. Generous headroom above for text overlay. ${s.lighting}, slightly noisy phone camera quality. Do not make it look staged or posed.`;\n\nreturn [{\n  json: {\n    ...item.json,\n    startFramePrompt: prompt\n  },\n  binary: item.binary\n}];"
+      },
+      "id": "tvf-build-start-prompt",
+      "name": "Build Start Frame Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "genericCredentialType",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'chatgpt-image-latest', prompt: $json.startFramePrompt, size: '1024x1536', quality: 'high' }) }}",
+        "options": {
+          "timeout": 180000
+        },
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "tvf-gen-start",
+      "name": "Generate Start Frame",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1820, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "j8iCKUL8UaahGcAr",
+          "name": "OpenAI Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst src = $('Pick Random Scene').first().json;\n\nlet imageData = null;\nlet imageUrl = null;\n\nif (response.data && response.data.length > 0) {\n  imageData = response.data[0].b64_json || null;\n  imageUrl = response.data[0].url || null;\n}\n\nif (!imageData && !imageUrl) {\n  throw new Error('Start frame generation returned no image data');\n}\n\nconst output = {\n  json: {\n    ...src,\n    startFrame_b64: imageData,\n    startFrame_url: imageUrl\n  }\n};\n\n// Create binary for the start frame\nif (imageData) {\n  output.binary = {\n    startFrame: {\n      data: imageData,\n      mimeType: 'image/png',\n      fileName: `${src.designId}_start_frame.png`\n    }\n  };\n} else if (imageUrl) {\n  // We'll need to download from URL - store for next step\n  output.json.startFrame_needs_download = true;\n}\n\n// Carry forward the design binary\nconst designBinary = $('Download Design PNG').first().binary;\nif (designBinary && designBinary.data) {\n  if (!output.binary) output.binary = {};\n  output.binary.design = designBinary.data;\n}\n\nreturn [output];"
+      },
+      "id": "tvf-parse-start",
+      "name": "Parse Start Frame",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2080, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst s = item.json.scene;\n\nconst prompt = `Using the first reference image as the scene and character reference: generate the SAME man, SAME setting, SAME lighting, SAME camera angle height — but now he has turned and is facing toward the camera at a diagonal angle. He is NOT looking directly at the camera. He has a slight knowing smirk on his face. The front of his black t-shirt now displays the EXACT design from the second reference image — reproduce the design precisely as shown, centered on the chest area of the shirt. Same outfit: black baseball cap, grey sweatpants, black sneakers. Same ${s.prop}. Same candid phone camera quality. Generous headroom above for text overlay. Vertical 9:16 format. Do not change the setting, do not change the person, do not change the lighting.`;\n\nreturn [{\n  json: {\n    ...item.json,\n    endFramePrompt: prompt\n  },\n  binary: item.binary\n}];"
+      },
+      "id": "tvf-build-end-prompt",
+      "name": "Build End Frame Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2340, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/edits",
+        "authentication": "genericCredentialType",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formData",
+              "name": "model",
+              "value": "chatgpt-image-latest"
+            },
+            {
+              "parameterType": "formData",
+              "name": "prompt",
+              "value": "={{ $json.endFramePrompt }}"
+            },
+            {
+              "parameterType": "formData",
+              "name": "size",
+              "value": "1024x1536"
+            },
+            {
+              "parameterType": "formData",
+              "name": "quality",
+              "value": "high"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "image[]",
+              "inputDataFieldName": "startFrame"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "image[]",
+              "inputDataFieldName": "design"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 180000
+        },
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "tvf-gen-end",
+      "name": "Generate End Frame",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2600, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "j8iCKUL8UaahGcAr",
+          "name": "OpenAI Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst src = $('Build End Frame Prompt').first().json;\n\nlet imageData = null;\nlet imageUrl = null;\n\nif (response.data && response.data.length > 0) {\n  imageData = response.data[0].b64_json || null;\n  imageUrl = response.data[0].url || null;\n}\n\nif (!imageData && !imageUrl) {\n  throw new Error('End frame generation returned no image data');\n}\n\nconst output = {\n  json: {\n    ...src,\n    endFrame_b64: imageData,\n    endFrame_url: imageUrl\n  }\n};\n\n// Create binary for the end frame\nif (imageData) {\n  output.binary = {\n    endFrame: {\n      data: imageData,\n      mimeType: 'image/png',\n      fileName: `${src.designId}_end_frame.png`\n    }\n  };\n}\n\n// Carry forward start frame binary\nconst prevBinary = $('Parse Start Frame').first().binary;\nif (prevBinary) {\n  if (!output.binary) output.binary = {};\n  if (prevBinary.startFrame) output.binary.startFrame = prevBinary.startFrame;\n  if (prevBinary.design) output.binary.design = prevBinary.design;\n}\n\nreturn [output];"
+      },
+      "id": "tvf-parse-end",
+      "name": "Parse End Frame",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the GPT-4o vision payload to compare start and end frames.\nconst item = $input.first();\nconst binary = item.binary || {};\n\nlet startB64 = item.json.startFrame_b64;\nlet endB64 = item.json.endFrame_b64;\n\n// If binary data exists, use it\nif (!startB64 && binary.startFrame) {\n  const buf = await this.helpers.getBinaryDataBuffer(0, 'startFrame');\n  startB64 = buf.toString('base64');\n}\nif (!endB64 && binary.endFrame) {\n  const buf = await this.helpers.getBinaryDataBuffer(0, 'endFrame');\n  endB64 = buf.toString('base64');\n}\n\nif (!startB64 || !endB64) {\n  throw new Error('Missing image data for consistency check');\n}\n\nconst requestBody = JSON.stringify({\n  model: 'gpt-4o',\n  messages: [\n    {\n      role: 'system',\n      content: 'You are a visual consistency checker for AI-generated image pairs. You will receive two images: a START frame and an END frame that will be used to generate a video transition. Check if they are consistent enough to produce a believable video. Return ONLY valid JSON with these fields:\\n- consistent (boolean): true if the frames match well enough\\n- confidence (number 0-100): how confident you are\\n- person_match (boolean): same apparent person (build, skin tone, outfit)\\n- setting_match (boolean): same location and background\\n- lighting_match (boolean): similar lighting and color temperature\\n- issues (array of strings): list any problems found\\n\\nBe lenient — small differences are OK since video generation will interpolate between frames. Only flag as inconsistent if there are major mismatches that would make a jarring video.'\n    },\n    {\n      role: 'user',\n      content: [\n        { type: 'text', text: 'START FRAME (person from behind, plain black shirt):' },\n        { type: 'image_url', image_url: { url: `data:image/png;base64,${startB64}` } },\n        { type: 'text', text: 'END FRAME (same person from front, design on shirt):' },\n        { type: 'image_url', image_url: { url: `data:image/png;base64,${endB64}` } }\n      ]\n    }\n  ],\n  max_tokens: 500\n});\n\nreturn [{\n  json: {\n    ...item.json,\n    requestBody\n  },\n  binary: item.binary\n}];"
+      },
+      "id": "tvf-build-check",
+      "name": "Build Consistency Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {
+          "timeout": 60000
+        },
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "tvf-consistency-check",
+      "name": "Consistency Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3380, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "j8iCKUL8UaahGcAr",
+          "name": "OpenAI Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst src = $('Build Consistency Payload').first().json;\nconst binary = $('Build Consistency Payload').first().binary;\n\nlet checkResult = { consistent: false, issues: ['Failed to parse response'] };\n\ntry {\n  const content = response.choices[0].message.content;\n  // Extract JSON from the response (may be wrapped in markdown code blocks)\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    checkResult = JSON.parse(jsonMatch[0]);\n  }\n} catch (e) {\n  checkResult = { consistent: false, issues: [`Parse error: ${e.message}`] };\n}\n\nreturn [{\n  json: {\n    designId: src.designId,\n    fileName: src.fileName,\n    fileId: src.fileId,\n    scene: src.scene,\n    retryCount: src.retryCount || 0,\n    consistent: checkResult.consistent === true,\n    confidence: checkResult.confidence || 0,\n    person_match: checkResult.person_match || false,\n    setting_match: checkResult.setting_match || false,\n    lighting_match: checkResult.lighting_match || false,\n    issues: checkResult.issues || []\n  },\n  binary: binary\n}];"
+      },
+      "id": "tvf-parse-check",
+      "name": "Parse Consistency Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3640, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "consistent-check",
+              "leftValue": "={{ $json.consistent }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "tvf-if-consistent",
+      "name": "IF Consistent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3900, 300]
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "name": "={{ $json.designId + '_' + $json.scene.id }}",
+        "parent": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-t_N9LYj9Rs0pSTBjC2dfI-rkesv2qJ8"
+        },
+        "options": {}
+      },
+      "id": "tvf-create-folder",
+      "name": "Create Output Subfolder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [4200, 160],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ZHc2tNwCdK85mHvM",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Capture the created folder ID and carry forward binaries\nconst folderResult = $input.first().json;\nconst src = $('Parse Consistency Result').first().json;\nconst binary = $('Parse Consistency Result').first().binary;\n\nreturn [{\n  json: {\n    ...src,\n    outputFolderId: folderResult.id\n  },\n  binary\n}];"
+      },
+      "id": "tvf-capture-folder",
+      "name": "Capture Folder ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4460, 160]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "inputDataFieldName": "startFrame",
+        "name": "={{ $json.designId + '_start_frame.png' }}",
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.outputFolderId }}"
+        },
+        "options": {}
+      },
+      "id": "tvf-upload-start",
+      "name": "Upload Start Frame",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [4720, 60],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ZHc2tNwCdK85mHvM",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "inputDataFieldName": "endFrame",
+        "name": "={{ $json.designId + '_end_frame.png' }}",
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.outputFolderId }}"
+        },
+        "options": {}
+      },
+      "id": "tvf-upload-end",
+      "name": "Upload End Frame",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [4720, 260],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ZHc2tNwCdK85mHvM",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log success and return to loop\nconst src = $('Capture Folder ID').first().json;\nconsole.log(`SUCCESS: ${src.designId} (${src.scene.name}) — confidence: ${src.confidence}%`);\n\nreturn [{ json: { designId: src.designId, scene: src.scene.id, status: 'success', confidence: src.confidence } }];"
+      },
+      "id": "tvf-log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4980, 160]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consistency check failed — check retry count\nconst src = $input.first().json;\nconst retryCount = (src.retryCount || 0) + 1;\n\nif (retryCount >= 3) {\n  console.log(`FAILED: ${src.designId} (${src.scene.name}) — gave up after ${retryCount} retries. Issues: ${(src.issues || []).join(', ')}`);\n  return [{ json: { designId: src.designId, scene: src.scene.id, status: 'failed', retryCount, issues: src.issues } }];\n}\n\nconsole.log(`RETRY ${retryCount}/3: ${src.designId} (${src.scene.name}) — Issues: ${(src.issues || []).join(', ')}`);\n\n// Pass back to end frame generation with incremented retry count\nreturn [{\n  json: {\n    ...src,\n    retryCount\n  },\n  binary: $input.first().binary\n}];"
+      },
+      "id": "tvf-handle-fail",
+      "name": "Handle Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4200, 460]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "retry-check",
+              "leftValue": "={{ $json.retryCount }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "tvf-if-retry",
+      "name": "IF Can Retry",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [4460, 460]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gave up — skip this design and move to next in batch\nconst src = $input.first().json;\nconsole.log(`SKIPPED: ${src.designId} — max retries reached`);\nreturn [{ json: { designId: src.designId, status: 'skipped', issues: src.issues } }];"
+      },
+      "id": "tvf-skip-design",
+      "name": "Skip Design",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4720, 560]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Placeholder for Higgsfield video generation.\n// When the CLI is set up, this node will:\n// 1. Call Higgsfield CLI with start_frame + end_frame\n// 2. Wait for video generation to complete\n// 3. Upload the resulting video to Google Drive\n//\n// For now, just pass through.\n\nconst items = $input.all();\nreturn items;"
+      },
+      "id": "tvf-video-placeholder",
+      "name": "[PLACEHOLDER] Video Gen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5240, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [{ "node": "List Design Files", "type": "main", "index": 0 }]
+      ]
+    },
+    "List Design Files": {
+      "main": [
+        [{ "node": "Filter Black Shirt Designs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Filter Black Shirt Designs": {
+      "main": [
+        [{ "node": "Loop Over Designs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Loop Over Designs": {
+      "main": [
+        null,
+        [{ "node": "Download Design PNG", "type": "main", "index": 0 }]
+      ]
+    },
+    "Download Design PNG": {
+      "main": [
+        [{ "node": "Pick Random Scene", "type": "main", "index": 0 }]
+      ]
+    },
+    "Pick Random Scene": {
+      "main": [
+        [{ "node": "Build Start Frame Prompt", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Start Frame Prompt": {
+      "main": [
+        [{ "node": "Generate Start Frame", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Start Frame": {
+      "main": [
+        [{ "node": "Parse Start Frame", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Start Frame": {
+      "main": [
+        [{ "node": "Build End Frame Prompt", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build End Frame Prompt": {
+      "main": [
+        [{ "node": "Generate End Frame", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate End Frame": {
+      "main": [
+        [{ "node": "Parse End Frame", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse End Frame": {
+      "main": [
+        [{ "node": "Build Consistency Payload", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Consistency Payload": {
+      "main": [
+        [{ "node": "Consistency Check", "type": "main", "index": 0 }]
+      ]
+    },
+    "Consistency Check": {
+      "main": [
+        [{ "node": "Parse Consistency Result", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Consistency Result": {
+      "main": [
+        [{ "node": "IF Consistent", "type": "main", "index": 0 }]
+      ]
+    },
+    "IF Consistent": {
+      "main": [
+        [{ "node": "Create Output Subfolder", "type": "main", "index": 0 }],
+        [{ "node": "Handle Failure", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Output Subfolder": {
+      "main": [
+        [{ "node": "Capture Folder ID", "type": "main", "index": 0 }]
+      ]
+    },
+    "Capture Folder ID": {
+      "main": [
+        [
+          { "node": "Upload Start Frame", "type": "main", "index": 0 },
+          { "node": "Upload End Frame", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Upload Start Frame": {
+      "main": [
+        [{ "node": "Log Success", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log Success": {
+      "main": [
+        [{ "node": "[PLACEHOLDER] Video Gen", "type": "main", "index": 0 }]
+      ]
+    },
+    "[PLACEHOLDER] Video Gen": {
+      "main": [
+        [{ "node": "Loop Over Designs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Handle Failure": {
+      "main": [
+        [{ "node": "IF Can Retry", "type": "main", "index": 0 }]
+      ]
+    },
+    "IF Can Retry": {
+      "main": [
+        [{ "node": "Build End Frame Prompt", "type": "main", "index": 0 }],
+        [{ "node": "Skip Design", "type": "main", "index": 0 }]
+      ]
+    },
+    "Skip Design": {
+      "main": [
+        [{ "node": "Loop Over Designs", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "tvf-v1",
+  "meta": {
+    "instanceId": "mildly-outdoorsy"
+  },
+  "tags": []
+}
