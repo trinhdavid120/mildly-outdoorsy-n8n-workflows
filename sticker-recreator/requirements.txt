@@ -1,0 +1,8 @@
+# Live scraping only. The offline path (`--source seed --provider dryrun`) needs
+# nothing here — it runs on the Python standard library alone.
+playwright>=1.44
+
+# After installing, fetch the browser once:
+#   playwright install chromium
+# (On the Claude Code web image Chromium is already at /opt/pw-browsers and is
+#  auto-detected, so you can skip the install there.)

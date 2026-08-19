@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <defs>
+    <clipPath id="badge"><circle cx="300" cy="300" r="250"/></clipPath>
+  </defs>
+  <!-- die-cut white border -->
+  <circle cx="300" cy="300" r="268" fill="#ffffff"/>
+  <circle cx="300" cy="300" r="258" fill="none" stroke="#4a3b6b" stroke-width="3" opacity="0.35"/>
+  <g clip-path="url(#badge)">
+    <rect x="0" y="0" width="600" height="600" fill="#eae6f0"/>
+    <!-- sun -->
+    <circle cx="300" cy="360" r="120" fill="#e0b04a" opacity="0.9"/>
+    <!-- back ridge -->
+    <path d="M50 420 L180 300 L280 400 L360 300 L470 410 L550 340 L550 560 L50 560 Z" fill="#4a3b6b" opacity="0.55"/>
+    <!-- front ridge -->
+    <path d="M20 470 L150 360 L250 450 L340 360 L430 460 L560 380 L560 560 L20 560 Z" fill="#4a3b6b"/>
+    <!-- three trees -->
+    <path d="M150 400 L124 460 L141 460 L118 498 L182 498 L159 460 L176 460 Z" fill="#211a30" opacity="0.85"/><rect x="145" y="498" width="10" height="16" fill="#211a30" opacity="0.85"/><path d="M300 425 L274 485 L291 485 L268 523 L332 523 L309 485 L326 485 Z" fill="#211a30" opacity="0.85"/><rect x="295" y="523" width="10" height="16" fill="#211a30" opacity="0.85"/><path d="M450 400 L424 460 L441 460 L418 498 L482 498 L459 460 L476 460 Z" fill="#211a30" opacity="0.85"/><rect x="445" y="498" width="10" height="16" fill="#211a30" opacity="0.85"/>
+  </g>
+  <!-- top banner -->
+  <path d="M300 60 q140 0 150 70 q-150 -30 -300 0 q10 -70 150 -70 Z" fill="#4a3b6b"/>
+  <text x="300" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700"
+        font-size="20" fill="#ffffff" letter-spacing="3">MILDLY OUTDOORSY</text>
+  <text x="300" y="198" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="46" fill="#211a30" letter-spacing="1">TAKE ONLY</text><text x="300" y="250" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="46" fill="#211a30" letter-spacing="1">PHOTOS, LEAVE</text><text x="300" y="302" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="46" fill="#211a30" letter-spacing="1">ONLY FOOTPRINTS</text>
+  <text x="300" y="545" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700"
+        font-size="16" fill="#211a30" opacity="0.65" letter-spacing="2">DIE-CUT VINYL · DRAFT COMP</text>
+</svg>

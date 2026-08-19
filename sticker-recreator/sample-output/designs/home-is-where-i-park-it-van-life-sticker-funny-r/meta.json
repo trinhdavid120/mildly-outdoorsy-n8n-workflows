@@ -1,0 +1,65 @@
+{
+  "slug": "home-is-where-i-park-it-van-life-sticker-funny-r",
+  "listing": {
+    "source": "etsy",
+    "listing_id": "seed-007",
+    "title": "Home Is Where I Park It Van Life Sticker Funny RV Camper Decal Waterproof",
+    "url": "https://www.etsy.com/listing/seed-007",
+    "shop": "RollingPinesCo",
+    "price": 4.5,
+    "currency": "USD",
+    "sales_estimate": null,
+    "review_count": 2890,
+    "rating": 4.88,
+    "favorites": 4400,
+    "in_cart": 19,
+    "bestseller": true,
+    "is_star_seller": false,
+    "bsr": null,
+    "tags": [
+      "van life",
+      "rv sticker",
+      "home is where you park it"
+    ],
+    "image_urls": [],
+    "joke_text": "Home Is Where I Park It Van Life Sticker Funny RV Camper Decal Waterproof",
+    "description": "",
+    "scraped_at": "",
+    "raw": {
+      "alt_copy": [
+        "My Address Is 'Wherever I Parked'",
+        "Home Has Four Wheels And A Leak",
+        "Zip Code: Undecided"
+      ],
+      "style": "vintage badge emblem, van silhouette, muted teal + rust"
+    }
+  },
+  "ip": {
+    "risk": "low",
+    "score": 0,
+    "hits": [],
+    "reasons": [
+      "no blocklist terms matched"
+    ],
+    "allowed": true
+  },
+  "perf_score": 0.6741,
+  "brief": {
+    "concept": "Home Is Where I Park It Van Life Funny RV Camper",
+    "keep": "The humour / punchline — that is what makes it sell.",
+    "change": "Exact wording, layout, illustration and typography — all original.",
+    "alt_copy": [
+      "My Address Is 'Wherever I Parked'",
+      "Home Has Four Wheels And A Leak",
+      "Zip Code: Undecided"
+    ],
+    "style": "vintage badge emblem, van silhouette, muted teal + rust",
+    "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"My Address Is 'Wherever I Parked'\". Style: vintage badge emblem, van silhouette, muted teal + rust. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+    "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+    "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+    "similarity_target": "85-90%"
+  },
+  "asset_path": "design.svg",
+  "gen_provider": "dryrun",
+  "gen_status": "dryrun"
+}

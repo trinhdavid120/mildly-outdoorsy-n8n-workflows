@@ -1,0 +1,65 @@
+{
+  "slug": "professional-overpacker-sticker-camping-humor-di",
+  "listing": {
+    "source": "etsy",
+    "listing_id": "seed-003",
+    "title": "Professional Overpacker Sticker | Camping Humor | Die Cut Waterproof",
+    "url": "https://www.etsy.com/listing/seed-003",
+    "shop": "BasecampButtons",
+    "price": 3.5,
+    "currency": "USD",
+    "sales_estimate": null,
+    "review_count": 1580,
+    "rating": 4.95,
+    "favorites": 2400,
+    "in_cart": 15,
+    "bestseller": true,
+    "is_star_seller": false,
+    "bsr": null,
+    "tags": [
+      "overpacker",
+      "camping sticker",
+      "funny travel"
+    ],
+    "image_urls": [],
+    "joke_text": "Professional Overpacker Sticker | Camping Humor | Die Cut Waterproof",
+    "description": "",
+    "scraped_at": "",
+    "raw": {
+      "alt_copy": [
+        "Certified Overpacker (Self-Appointed)",
+        "I Packed For Every Apocalypse",
+        "Just In Case Is My Whole Personality"
+      ],
+      "style": "hand-drawn ink line-art, single accent color, cream background"
+    }
+  },
+  "ip": {
+    "risk": "low",
+    "score": 0,
+    "hits": [],
+    "reasons": [
+      "no blocklist terms matched"
+    ],
+    "allowed": true
+  },
+  "perf_score": 0.6451,
+  "brief": {
+    "concept": "Professional Overpacker",
+    "keep": "The humour / punchline — that is what makes it sell.",
+    "change": "Exact wording, layout, illustration and typography — all original.",
+    "alt_copy": [
+      "Certified Overpacker (Self-Appointed)",
+      "I Packed For Every Apocalypse",
+      "Just In Case Is My Whole Personality"
+    ],
+    "style": "hand-drawn ink line-art, single accent color, cream background",
+    "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Certified Overpacker (Self-Appointed)\". Style: hand-drawn ink line-art, single accent color, cream background. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+    "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+    "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+    "similarity_target": "85-90%"
+  },
+  "asset_path": "design.svg",
+  "gen_provider": "dryrun",
+  "gen_status": "dryrun"
+}

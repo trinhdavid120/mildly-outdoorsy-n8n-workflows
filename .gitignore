@@ -17,3 +17,12 @@ secrets/
 
 # Local Supabase/DB snapshots (rollback artifacts)
 backups/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# sticker-recreator live run output (the committed demo lives in sample-output/)
+sticker-recreator/output/
