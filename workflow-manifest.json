@@ -92,7 +92,7 @@
       "live_name": "Mildly Outdoorsy - Error Alert",
       "n8n_workflow_id": "O7MGIgi7TQuPDmpi",
       "activate_after_sync": true,
-      "purpose": "Error Trigger workflow — catches unhandled crashes from all other workflows and sends Slack alerts with workflow name, failed node, error message, and next steps"
+      "purpose": "Error Trigger workflow \u2014 catches unhandled crashes from all other workflows and sends Slack alerts with workflow name, failed node, error message, and next steps"
     },
     {
       "name": "tiktok_video_factory",
@@ -101,6 +101,14 @@
       "n8n_workflow_id": "",
       "activate_after_sync": false,
       "purpose": "Batch-generate TikTok 'spotted in the wild' videos: for each design, generate start frame (back) + end frame (front with design) via ChatGPT image gen, consistency-check with GPT-4o vision, upload frame pairs to Google Drive, then generate video via Higgsfield"
+    },
+    {
+      "name": "q_daily_scan",
+      "file": "R Designs - Q Daily Scan.json",
+      "live_name": "R Designs - Q Daily Scan",
+      "n8n_workflow_id": null,
+      "activate_after_sync": true,
+      "purpose": "Daily 7AM PT: stamp Pipeline Control!B35 so the Mac poller runs W7 \u2014 Q Designs rows the VA flips to 'Design For Review' get fetched, researched (EverBee+eRank), planned, built as drafts on both shops with the hardened ink/niche/hero rules, audited, and flipped to Done. Poller self-stamps at 07:00 as fallback if this workflow is down."
     }
   ]
 }

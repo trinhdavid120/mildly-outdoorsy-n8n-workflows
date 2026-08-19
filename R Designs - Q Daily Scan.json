@@ -1,0 +1,65 @@
+{
+  "name": "R Designs - Q Daily Scan",
+  "nodes": [
+    {
+      "id": "schedule-q-daily",
+      "name": "Every day 7:00 AM PT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "stamp-b35",
+      "name": "Stamp Pipeline Control B35",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "z1DYFmR0uqJb3Bfg",
+          "name": "Google Sheets account"
+        }
+      },
+      "parameters": {
+        "method": "PUT",
+        "url": "https://sheets.googleapis.com/v4/spreadsheets/1sZw3jk4MnglJW_cpcu0oco7QD-mM3NC0hgEfRSPNz9U/values/Pipeline%20Control!B35?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"values\": [[\"n8n {{ $now.toISO() }}\"]]}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every day 7:00 AM PT": {
+      "main": [
+        [
+          {
+            "node": "Stamp Pipeline Control B35",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Los_Angeles",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "pinData": {}
+}
