@@ -1,0 +1,65 @@
+{
+  "slug": "certified-tree-hugger-sticker-cute-nature-sticke",
+  "listing": {
+    "source": "etsy",
+    "listing_id": "seed-012",
+    "title": "Certified Tree Hugger Sticker Cute Nature Sticker Waterproof Vinyl Decal",
+    "url": "https://www.etsy.com/listing/seed-012",
+    "shop": "RootedGoodsShop",
+    "price": 3.5,
+    "currency": "USD",
+    "sales_estimate": null,
+    "review_count": 4100,
+    "rating": 4.9,
+    "favorites": 5200,
+    "in_cart": 26,
+    "bestseller": false,
+    "is_star_seller": true,
+    "bsr": null,
+    "tags": [
+      "tree hugger",
+      "nature sticker",
+      "earth day"
+    ],
+    "image_urls": [],
+    "joke_text": "Certified Tree Hugger Sticker Cute Nature Sticker Waterproof Vinyl Decal",
+    "description": "",
+    "scraped_at": "",
+    "raw": {
+      "alt_copy": [
+        "Professional Tree Hugger, Amateur Everything Else",
+        "I Brake For Big Trees",
+        "Chlorophyll Enthusiast"
+      ],
+      "style": "vintage badge emblem, big pine, forest + amber palette"
+    }
+  },
+  "ip": {
+    "risk": "low",
+    "score": 0,
+    "hits": [],
+    "reasons": [
+      "no blocklist terms matched"
+    ],
+    "allowed": true
+  },
+  "perf_score": 0.6819,
+  "brief": {
+    "concept": "Certified Tree Hugger Cute Nature",
+    "keep": "The humour / punchline — that is what makes it sell.",
+    "change": "Exact wording, layout, illustration and typography — all original.",
+    "alt_copy": [
+      "Professional Tree Hugger, Amateur Everything Else",
+      "I Brake For Big Trees",
+      "Chlorophyll Enthusiast"
+    ],
+    "style": "vintage badge emblem, big pine, forest + amber palette",
+    "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Professional Tree Hugger, Amateur Everything Else\". Style: vintage badge emblem, big pine, forest + amber palette. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+    "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+    "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+    "similarity_target": "85-90%"
+  },
+  "asset_path": "design.svg",
+  "gen_provider": "dryrun",
+  "gen_status": "dryrun"
+}

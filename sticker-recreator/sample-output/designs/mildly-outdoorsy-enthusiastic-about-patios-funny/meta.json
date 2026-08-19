@@ -1,0 +1,65 @@
+{
+  "slug": "mildly-outdoorsy-enthusiastic-about-patios-funny",
+  "listing": {
+    "source": "etsy",
+    "listing_id": "seed-016",
+    "title": "Mildly Outdoorsy Enthusiastic About Patios Funny Sticker Waterproof Decal",
+    "url": "https://www.etsy.com/listing/seed-016",
+    "shop": "PatioPeakCo",
+    "price": 4.0,
+    "currency": "USD",
+    "sales_estimate": null,
+    "review_count": 2670,
+    "rating": 4.89,
+    "favorites": 5100,
+    "in_cart": 38,
+    "bestseller": false,
+    "is_star_seller": true,
+    "bsr": null,
+    "tags": [
+      "mildly outdoorsy",
+      "patio",
+      "funny camping"
+    ],
+    "image_urls": [],
+    "joke_text": "Mildly Outdoorsy Enthusiastic About Patios Funny Sticker Waterproof Decal",
+    "description": "",
+    "scraped_at": "",
+    "raw": {
+      "alt_copy": [
+        "Outdoorsy: I Sit Near Windows",
+        "My Wilderness Is A Nice Patio",
+        "Rugged, In A Brunch Sort Of Way"
+      ],
+      "style": "modern minimalist, one-line umbrella + pine, muted palette"
+    }
+  },
+  "ip": {
+    "risk": "low",
+    "score": 0,
+    "hits": [],
+    "reasons": [
+      "no blocklist terms matched"
+    ],
+    "allowed": true
+  },
+  "perf_score": 0.6706,
+  "brief": {
+    "concept": "Mildly Outdoorsy Enthusiastic About Patios Funny",
+    "keep": "The humour / punchline — that is what makes it sell.",
+    "change": "Exact wording, layout, illustration and typography — all original.",
+    "alt_copy": [
+      "Outdoorsy: I Sit Near Windows",
+      "My Wilderness Is A Nice Patio",
+      "Rugged, In A Brunch Sort Of Way"
+    ],
+    "style": "modern minimalist, one-line umbrella + pine, muted palette",
+    "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Outdoorsy: I Sit Near Windows\". Style: modern minimalist, one-line umbrella + pine, muted palette. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+    "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+    "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+    "similarity_target": "85-90%"
+  },
+  "asset_path": "design.svg",
+  "gen_provider": "dryrun",
+  "gen_status": "dryrun"
+}

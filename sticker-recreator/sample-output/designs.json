@@ -1,0 +1,795 @@
+{
+  "meta": {
+    "generated_at": "2026-08-19T08:22:08Z",
+    "source": "seed",
+    "query": "",
+    "provider": "dryrun",
+    "scraped": 23,
+    "allowed": 20,
+    "blocked": 3,
+    "recreated": 12,
+    "run_dir": "sticker-recreator/sample-output"
+  },
+  "designs": [
+    {
+      "slug": "leave-it-better-than-you-found-it-sticker-nature",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-009",
+        "title": "Leave It Better Than You Found It Sticker Nature Conservation Outdoors Decal",
+        "url": "https://www.etsy.com/listing/seed-009",
+        "shop": "TendTheTrailStudio",
+        "price": 3.75,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 5010,
+        "rating": 4.96,
+        "favorites": 7300,
+        "in_cart": 37,
+        "bestseller": true,
+        "is_star_seller": true,
+        "bsr": null,
+        "tags": [
+          "leave no trace",
+          "conservation",
+          "nature lover"
+        ],
+        "image_urls": [],
+        "joke_text": "Leave It Better Than You Found It Sticker Nature Conservation Outdoors Decal",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Take Only Photos, Leave Only Footprints",
+            "Pack It In, Pack It Out, Be Cool",
+            "Tread Light, Leave It Bright"
+          ],
+          "style": "flat vector die-cut, 2 flat colors, thick white border, wholesome"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.7675,
+      "brief": {
+        "concept": "Leave It Better Than You Found It Nature Conservation Outdoors",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Take Only Photos, Leave Only Footprints",
+          "Pack It In, Pack It Out, Be Cool",
+          "Tread Light, Leave It Bright"
+        ],
+        "style": "flat vector die-cut, 2 flat colors, thick white border, wholesome",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Take Only Photos, Leave Only Footprints\". Style: flat vector die-cut, 2 flat colors, thick white border, wholesome. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "camping-hair-don-t-care-sticker-cute-outdoors-de",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-006",
+        "title": "Camping Hair Don't Care Sticker | Cute Outdoors Decal | Waterproof Vinyl",
+        "url": "https://www.etsy.com/listing/seed-006",
+        "shop": "PineAndPastel",
+        "price": 3.25,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 6300,
+        "rating": 4.9,
+        "favorites": 8200,
+        "in_cart": 28,
+        "bestseller": true,
+        "is_star_seller": true,
+        "bsr": null,
+        "tags": [
+          "camping hair",
+          "cute camping",
+          "girls camping trip"
+        ],
+        "image_urls": [],
+        "joke_text": "Camping Hair Don't Care Sticker | Cute Outdoors Decal | Waterproof Vinyl",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Tent Hair, Zero Cares",
+            "Campfire Smoke Is My Signature Scent",
+            "Bedhead By Wilderness"
+          ],
+          "style": "hand-drawn ink line-art, warm halftone, camp-flyer typography"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.7649,
+      "brief": {
+        "concept": "Camping Hair Don't Care",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Tent Hair, Zero Cares",
+          "Campfire Smoke Is My Signature Scent",
+          "Bedhead By Wilderness"
+        ],
+        "style": "hand-drawn ink line-art, warm halftone, camp-flyer typography",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Tent Hair, Zero Cares\". Style: hand-drawn ink line-art, warm halftone, camp-flyer typography. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "i-hike-so-i-can-eat-snacks-sticker-funny-hiking",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-001",
+        "title": "I Hike So I Can Eat Snacks Sticker | Funny Hiking Decal | Waterproof Vinyl Laptop Water Bottle",
+        "url": "https://www.etsy.com/listing/seed-001",
+        "shop": "TrailSnackCo",
+        "price": 3.75,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 4820,
+        "rating": 4.9,
+        "favorites": 5600,
+        "in_cart": 34,
+        "bestseller": true,
+        "is_star_seller": true,
+        "bsr": null,
+        "tags": [
+          "hiking sticker",
+          "funny outdoor",
+          "snack lover"
+        ],
+        "image_urls": [],
+        "joke_text": "I Hike So I Can Eat Snacks Sticker | Funny Hiking Decal | Waterproof Vinyl Laptop Water Bottle",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Hiking: My Cardio For Snacks",
+            "Will Summit For Snacks",
+            "The Trail Is Just The Path To Trail Mix"
+          ],
+          "style": "flat vector die-cut, 3 flat colors, bold rounded sans, retro national-park palette"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.7573,
+      "brief": {
+        "concept": "I Hike So I Can Eat Snacks",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Hiking: My Cardio For Snacks",
+          "Will Summit For Snacks",
+          "The Trail Is Just The Path To Trail Mix"
+        ],
+        "style": "flat vector die-cut, 3 flat colors, bold rounded sans, retro national-park palette",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Hiking: My Cardio For Snacks\". Style: flat vector die-cut, 3 flat colors, bold rounded sans, retro national-park palette. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "trash-panda-trail-crew-raccoon-camping-sticker-f",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-010",
+        "title": "Trash Panda Trail Crew Raccoon Camping Sticker Funny Cute Waterproof Decal",
+        "url": "https://www.etsy.com/listing/seed-010",
+        "shop": "NocturnalNibblesCo",
+        "price": 4.0,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 3320,
+        "rating": 4.92,
+        "favorites": 6900,
+        "in_cart": 44,
+        "bestseller": true,
+        "is_star_seller": true,
+        "bsr": null,
+        "tags": [
+          "trash panda",
+          "raccoon sticker",
+          "funny camping"
+        ],
+        "image_urls": [],
+        "joke_text": "Trash Panda Trail Crew Raccoon Camping Sticker Funny Cute Waterproof Decal",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Trail Crew, Snack Division",
+            "Certified Campsite Bandit",
+            "We Come For The Crumbs"
+          ],
+          "style": "hand-drawn ink line-art of a masked raccoon, single accent color"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.7483,
+      "brief": {
+        "concept": "Trash Panda Trail Crew Raccoon Camping Funny Cute",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Trail Crew, Snack Division",
+          "Certified Campsite Bandit",
+          "We Come For The Crumbs"
+        ],
+        "style": "hand-drawn ink line-art of a masked raccoon, single accent color",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Trail Crew, Snack Division\". Style: hand-drawn ink line-art of a masked raccoon, single accent color. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "the-mountains-are-calling-and-i-must-go-eventual",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-004",
+        "title": "The Mountains Are Calling and I Must Go Eventually Sticker Funny Hiker Decal",
+        "url": "https://www.etsy.com/listing/seed-004",
+        "shop": "SlowSummitStudio",
+        "price": 4.25,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 3760,
+        "rating": 4.85,
+        "favorites": 6100,
+        "in_cart": 41,
+        "bestseller": true,
+        "is_star_seller": true,
+        "bsr": null,
+        "tags": [
+          "mountains",
+          "john muir",
+          "procrastination"
+        ],
+        "image_urls": [],
+        "joke_text": "The Mountains Are Calling and I Must Go Eventually Sticker Funny Hiker Decal",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "The Mountains Are Calling But It's Gone To Voicemail",
+            "The Peaks Can Wait Until I Finish My Coffee",
+            "Mountains Calling — On Hold, Please"
+          ],
+          "style": "flat vector die-cut, layered ridgelines, dusk gradient sky as flat bands"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.7454,
+      "brief": {
+        "concept": "The Mountains Are Calling and I Must Go Eventually Funny Hiker",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "The Mountains Are Calling But It's Gone To Voicemail",
+          "The Peaks Can Wait Until I Finish My Coffee",
+          "Mountains Calling — On Hold, Please"
+        ],
+        "style": "flat vector die-cut, layered ridgelines, dusk gradient sky as flat bands",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"The Mountains Are Calling But It's Gone To Voicemail\". Style: flat vector die-cut, layered ridgelines, dusk gradient sky as flat bands. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "wander-often-wonder-always-sticker-cute-travel-n",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-015",
+        "title": "Wander Often Wonder Always Sticker Cute Travel Nature Decal Waterproof Vinyl",
+        "url": "https://www.etsy.com/listing/seed-015",
+        "shop": "MapAndMossStudio",
+        "price": 3.75,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 3890,
+        "rating": 4.93,
+        "favorites": 6000,
+        "in_cart": 29,
+        "bestseller": true,
+        "is_star_seller": true,
+        "bsr": null,
+        "tags": [
+          "wander often",
+          "travel sticker",
+          "wanderlust"
+        ],
+        "image_urls": [],
+        "joke_text": "Wander Often Wonder Always Sticker Cute Travel Nature Decal Waterproof Vinyl",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Wander More, Worry Less",
+            "Keep Wondering, Keep Wandering",
+            "Curiosity Has A Trailhead"
+          ],
+          "style": "hand-drawn ink line-art, compass motif, single accent color"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.7453,
+      "brief": {
+        "concept": "Wander Often Wonder Always Cute Travel Nature",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Wander More, Worry Less",
+          "Keep Wondering, Keep Wandering",
+          "Curiosity Has A Trailhead"
+        ],
+        "style": "hand-drawn ink line-art, compass motif, single accent color",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Wander More, Worry Less\". Style: hand-drawn ink line-art, compass motif, single accent color. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "adventure-is-out-there-i-m-staying-in-funny-home",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-019",
+        "title": "Adventure Is Out There I'm Staying In Funny Homebody Sticker Waterproof Decal",
+        "url": "https://www.etsy.com/listing/seed-019",
+        "shop": "CozyBasecampGoods",
+        "price": 3.75,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 3450,
+        "rating": 4.91,
+        "favorites": 5800,
+        "in_cart": 25,
+        "bestseller": true,
+        "is_star_seller": true,
+        "bsr": null,
+        "tags": [
+          "homebody",
+          "funny adventure",
+          "staying in"
+        ],
+        "image_urls": [],
+        "joke_text": "Adventure Is Out There I'm Staying In Funny Homebody Sticker Waterproof Decal",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Adventure Is Out There. Anyway, Naptime.",
+            "The Wild Can Wait, The Couch Cannot",
+            "Outdoorsy From The Window"
+          ],
+          "style": "hand-drawn ink line-art, tent + blanket gag, single accent color"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.7333,
+      "brief": {
+        "concept": "Adventure Is Out There I'm Staying In Funny Homebody",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Adventure Is Out There. Anyway, Naptime.",
+          "The Wild Can Wait, The Couch Cannot",
+          "Outdoorsy From The Window"
+        ],
+        "style": "hand-drawn ink line-art, tent + blanket gag, single accent color",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Adventure Is Out There. Anyway, Naptime.\". Style: hand-drawn ink line-art, tent + blanket gag, single accent color. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "certified-tree-hugger-sticker-cute-nature-sticke",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-012",
+        "title": "Certified Tree Hugger Sticker Cute Nature Sticker Waterproof Vinyl Decal",
+        "url": "https://www.etsy.com/listing/seed-012",
+        "shop": "RootedGoodsShop",
+        "price": 3.5,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 4100,
+        "rating": 4.9,
+        "favorites": 5200,
+        "in_cart": 26,
+        "bestseller": false,
+        "is_star_seller": true,
+        "bsr": null,
+        "tags": [
+          "tree hugger",
+          "nature sticker",
+          "earth day"
+        ],
+        "image_urls": [],
+        "joke_text": "Certified Tree Hugger Sticker Cute Nature Sticker Waterproof Vinyl Decal",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Professional Tree Hugger, Amateur Everything Else",
+            "I Brake For Big Trees",
+            "Chlorophyll Enthusiast"
+          ],
+          "style": "vintage badge emblem, big pine, forest + amber palette"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.6819,
+      "brief": {
+        "concept": "Certified Tree Hugger Cute Nature",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Professional Tree Hugger, Amateur Everything Else",
+          "I Brake For Big Trees",
+          "Chlorophyll Enthusiast"
+        ],
+        "style": "vintage badge emblem, big pine, forest + amber palette",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Professional Tree Hugger, Amateur Everything Else\". Style: vintage badge emblem, big pine, forest + amber palette. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "sunsets-over-deadlines-sticker-funny-outdoorsy-w",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-013",
+        "title": "Sunsets Over Deadlines Sticker Funny Outdoorsy Work Life Decal Waterproof",
+        "url": "https://www.etsy.com/listing/seed-013",
+        "shop": "GoldenHourGoods",
+        "price": 4.25,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 2450,
+        "rating": 4.87,
+        "favorites": 4600,
+        "in_cart": 33,
+        "bestseller": true,
+        "is_star_seller": false,
+        "bsr": null,
+        "tags": [
+          "sunsets over deadlines",
+          "work life balance",
+          "adventure"
+        ],
+        "image_urls": [],
+        "joke_text": "Sunsets Over Deadlines Sticker Funny Outdoorsy Work Life Decal Waterproof",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Chasing Sunsets, Not Deadlines",
+            "Out Of Office, Into The Alpenglow",
+            "My PTO Plan Is A Mountain"
+          ],
+          "style": "flat vector die-cut, big flat sun, warm banded sky"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.6804,
+      "brief": {
+        "concept": "Sunsets Over Deadlines Funny Outdoorsy Work Life",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Chasing Sunsets, Not Deadlines",
+          "Out Of Office, Into The Alpenglow",
+          "My PTO Plan Is A Mountain"
+        ],
+        "style": "flat vector die-cut, big flat sun, warm banded sky",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Chasing Sunsets, Not Deadlines\". Style: flat vector die-cut, big flat sun, warm banded sky. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "home-is-where-i-park-it-van-life-sticker-funny-r",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-007",
+        "title": "Home Is Where I Park It Van Life Sticker Funny RV Camper Decal Waterproof",
+        "url": "https://www.etsy.com/listing/seed-007",
+        "shop": "RollingPinesCo",
+        "price": 4.5,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 2890,
+        "rating": 4.88,
+        "favorites": 4400,
+        "in_cart": 19,
+        "bestseller": true,
+        "is_star_seller": false,
+        "bsr": null,
+        "tags": [
+          "van life",
+          "rv sticker",
+          "home is where you park it"
+        ],
+        "image_urls": [],
+        "joke_text": "Home Is Where I Park It Van Life Sticker Funny RV Camper Decal Waterproof",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "My Address Is 'Wherever I Parked'",
+            "Home Has Four Wheels And A Leak",
+            "Zip Code: Undecided"
+          ],
+          "style": "vintage badge emblem, van silhouette, muted teal + rust"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.6741,
+      "brief": {
+        "concept": "Home Is Where I Park It Van Life Funny RV Camper",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "My Address Is 'Wherever I Parked'",
+          "Home Has Four Wheels And A Leak",
+          "Zip Code: Undecided"
+        ],
+        "style": "vintage badge emblem, van silhouette, muted teal + rust",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"My Address Is 'Wherever I Parked'\". Style: vintage badge emblem, van silhouette, muted teal + rust. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "mildly-outdoorsy-enthusiastic-about-patios-funny",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-016",
+        "title": "Mildly Outdoorsy Enthusiastic About Patios Funny Sticker Waterproof Decal",
+        "url": "https://www.etsy.com/listing/seed-016",
+        "shop": "PatioPeakCo",
+        "price": 4.0,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 2670,
+        "rating": 4.89,
+        "favorites": 5100,
+        "in_cart": 38,
+        "bestseller": false,
+        "is_star_seller": true,
+        "bsr": null,
+        "tags": [
+          "mildly outdoorsy",
+          "patio",
+          "funny camping"
+        ],
+        "image_urls": [],
+        "joke_text": "Mildly Outdoorsy Enthusiastic About Patios Funny Sticker Waterproof Decal",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Outdoorsy: I Sit Near Windows",
+            "My Wilderness Is A Nice Patio",
+            "Rugged, In A Brunch Sort Of Way"
+          ],
+          "style": "modern minimalist, one-line umbrella + pine, muted palette"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.6706,
+      "brief": {
+        "concept": "Mildly Outdoorsy Enthusiastic About Patios Funny",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Outdoorsy: I Sit Near Windows",
+          "My Wilderness Is A Nice Patio",
+          "Rugged, In A Brunch Sort Of Way"
+        ],
+        "style": "modern minimalist, one-line umbrella + pine, muted palette",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Outdoorsy: I Sit Near Windows\". Style: modern minimalist, one-line umbrella + pine, muted palette. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    },
+    {
+      "slug": "professional-overpacker-sticker-camping-humor-di",
+      "listing": {
+        "source": "etsy",
+        "listing_id": "seed-003",
+        "title": "Professional Overpacker Sticker | Camping Humor | Die Cut Waterproof",
+        "url": "https://www.etsy.com/listing/seed-003",
+        "shop": "BasecampButtons",
+        "price": 3.5,
+        "currency": "USD",
+        "sales_estimate": null,
+        "review_count": 1580,
+        "rating": 4.95,
+        "favorites": 2400,
+        "in_cart": 15,
+        "bestseller": true,
+        "is_star_seller": false,
+        "bsr": null,
+        "tags": [
+          "overpacker",
+          "camping sticker",
+          "funny travel"
+        ],
+        "image_urls": [],
+        "joke_text": "Professional Overpacker Sticker | Camping Humor | Die Cut Waterproof",
+        "description": "",
+        "scraped_at": "",
+        "raw": {
+          "alt_copy": [
+            "Certified Overpacker (Self-Appointed)",
+            "I Packed For Every Apocalypse",
+            "Just In Case Is My Whole Personality"
+          ],
+          "style": "hand-drawn ink line-art, single accent color, cream background"
+        }
+      },
+      "ip": {
+        "risk": "low",
+        "score": 0,
+        "hits": [],
+        "reasons": [
+          "no blocklist terms matched"
+        ],
+        "allowed": true
+      },
+      "perf_score": 0.6451,
+      "brief": {
+        "concept": "Professional Overpacker",
+        "keep": "The humour / punchline — that is what makes it sell.",
+        "change": "Exact wording, layout, illustration and typography — all original.",
+        "alt_copy": [
+          "Certified Overpacker (Self-Appointed)",
+          "I Packed For Every Apocalypse",
+          "Just In Case Is My Whole Personality"
+        ],
+        "style": "hand-drawn ink line-art, single accent color, cream background",
+        "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Certified Overpacker (Self-Appointed)\". Style: hand-drawn ink line-art, single accent color, cream background. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+        "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+        "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+        "similarity_target": "85-90%"
+      },
+      "asset_path": "design.svg",
+      "gen_provider": "dryrun",
+      "gen_status": "dryrun"
+    }
+  ]
+}

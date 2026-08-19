@@ -1,0 +1,65 @@
+{
+  "slug": "leave-it-better-than-you-found-it-sticker-nature",
+  "listing": {
+    "source": "etsy",
+    "listing_id": "seed-009",
+    "title": "Leave It Better Than You Found It Sticker Nature Conservation Outdoors Decal",
+    "url": "https://www.etsy.com/listing/seed-009",
+    "shop": "TendTheTrailStudio",
+    "price": 3.75,
+    "currency": "USD",
+    "sales_estimate": null,
+    "review_count": 5010,
+    "rating": 4.96,
+    "favorites": 7300,
+    "in_cart": 37,
+    "bestseller": true,
+    "is_star_seller": true,
+    "bsr": null,
+    "tags": [
+      "leave no trace",
+      "conservation",
+      "nature lover"
+    ],
+    "image_urls": [],
+    "joke_text": "Leave It Better Than You Found It Sticker Nature Conservation Outdoors Decal",
+    "description": "",
+    "scraped_at": "",
+    "raw": {
+      "alt_copy": [
+        "Take Only Photos, Leave Only Footprints",
+        "Pack It In, Pack It Out, Be Cool",
+        "Tread Light, Leave It Bright"
+      ],
+      "style": "flat vector die-cut, 2 flat colors, thick white border, wholesome"
+    }
+  },
+  "ip": {
+    "risk": "low",
+    "score": 0,
+    "hits": [],
+    "reasons": [
+      "no blocklist terms matched"
+    ],
+    "allowed": true
+  },
+  "perf_score": 0.7675,
+  "brief": {
+    "concept": "Leave It Better Than You Found It Nature Conservation Outdoors",
+    "keep": "The humour / punchline — that is what makes it sell.",
+    "change": "Exact wording, layout, illustration and typography — all original.",
+    "alt_copy": [
+      "Take Only Photos, Leave Only Footprints",
+      "Pack It In, Pack It Out, Be Cool",
+      "Tread Light, Leave It Bright"
+    ],
+    "style": "flat vector die-cut, 2 flat colors, thick white border, wholesome",
+    "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Take Only Photos, Leave Only Footprints\". Style: flat vector die-cut, 2 flat colors, thick white border, wholesome. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+    "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+    "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+    "similarity_target": "85-90%"
+  },
+  "asset_path": "design.svg",
+  "gen_provider": "dryrun",
+  "gen_status": "dryrun"
+}

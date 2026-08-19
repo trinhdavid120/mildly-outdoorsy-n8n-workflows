@@ -1,0 +1,96 @@
+{
+  "_comment": "Weighted copyright/trademark screen. Terms are matched case-insensitively on word boundaries against title + tags + description. Severity is added to a risk score; see ip_filter.py for thresholds. Extend freely — this is intentionally conservative (better to skip a borderline listing than recreate protected IP).",
+  "categories": [
+    {
+      "name": "franchise_character",
+      "severity": 60,
+      "note": "Copyrighted characters / franchises. Never recreate.",
+      "terms": [
+        "disney", "mickey mouse", "minnie mouse", "winnie the pooh", "pooh bear",
+        "eeyore", "stitch", "lilo", "baby yoda", "grogu", "mandalorian",
+        "star wars", "darth vader", "yoda", "jedi", "sith",
+        "marvel", "spider-man", "spiderman", "iron man", "captain america",
+        "avengers", "hulk", "deadpool", "wolverine", "x-men",
+        "dc comics", "batman", "superman", "wonder woman", "harley quinn",
+        "pokemon", "pokémon", "pikachu", "charizard", "eevee",
+        "nintendo", "super mario", "mario", "luigi", "zelda", "kirby", "yoshi",
+        "sonic the hedgehog", "sega",
+        "hello kitty", "sanrio", "kuromi", "my melody", "cinnamoroll",
+        "studio ghibli", "totoro", "kiki", "ponyo", "no face",
+        "snoopy", "peanuts", "charlie brown", "woodstock",
+        "bluey", "bingo heeler", "peppa pig",
+        "spongebob", "patrick star", "bikini bottom",
+        "minecraft", "creeper", "roblox",
+        "barbie", "hot wheels", "my little pony", "care bears",
+        "dr seuss", "the lorax", "grinch", "cat in the hat",
+        "harry potter", "hogwarts", "gryffindor", "hufflepuff",
+        "lord of the rings", "gandalf", "the hobbit",
+        "sesame street", "elmo", "cookie monster", "big bird",
+        "looney tunes", "bugs bunny", "tweety", "scooby doo",
+        "the simpsons", "family guy", "rick and morty", "south park",
+        "stranger things", "the office", "friends tv",
+        "garfield", "calvin and hobbes", "adventure time",
+        "beavis and butthead", "powerpuff girls", "teenage mutant ninja turtles",
+        "gremlins", "labubu", "sonny angel", "smiski",
+        "hakuna matata", "the happiest place"
+      ]
+    },
+    {
+      "name": "trademark_brand",
+      "severity": 60,
+      "note": "Registered brand names / logos. Recreating implies a trademark.",
+      "terms": [
+        "yeti", "stanley cup", "stanley tumbler", "hydro flask", "hydroflask",
+        "nalgene", "camelbak", "owala",
+        "patagonia", "the north face", "north face", "arc'teryx", "arcteryx",
+        "columbia sportswear", "carhartt", "rei co-op", "l.l. bean", "llbean",
+        "osprey packs", "gregory packs", "cotopaxi", "kuiu", "sitka gear",
+        "nike", "adidas", "under armour", "lululemon", "vuori", "on running",
+        "hoka", "salomon", "merrell", "keen footwear", "chacos", "teva",
+        "birkenstock", "crocs", "vans", "converse",
+        "jeep", "subaru", "toyota", "tacoma", "4runner", "bronco", "ford",
+        "airstream", "winnebago", "gopro", "garmin",
+        "starbucks", "coca-cola", "coca cola", "pepsi", "monster energy",
+        "red bull", "jack daniels", "modelo", "corona extra",
+        "supreme", "louis vuitton", "gucci", "chanel", "off-white",
+        "john deere", "harley-davidson", "harley davidson",
+        "apple inc", "playstation", "xbox", "twitch", "tiktok logo",
+        "national park service arrowhead", "smokey bear", "smokey the bear",
+        "life is good", "just do it"
+      ]
+    },
+    {
+      "name": "celebrity_or_band",
+      "severity": 55,
+      "note": "Right-of-publicity / likeness; song lyrics are also copyrighted.",
+      "terms": [
+        "taylor swift", "swiftie", "beyonce", "beyoncé", "drake", "kanye",
+        "travis scott", "bad bunny", "olivia rodrigo", "billie eilish",
+        "grateful dead", "steal your face", "nirvana smiley", "metallica",
+        "fleetwood mac", "the beatles", "rolling stones tongue",
+        "bob marley", "tupac", "notorious big",
+        "bluey", "ms rachel", "mr beast", "mrbeast"
+      ]
+    },
+    {
+      "name": "registered_slogan",
+      "severity": 45,
+      "note": "Phrases registered as trademarks even though they sound generic.",
+      "terms": [
+        "just send it", "make america", "let's go brandon",
+        "namast'ay", "keep calm and",
+        "i'm silently correcting your grammar", "world's okayest"
+      ]
+    },
+    {
+      "name": "explicit_ip_signal",
+      "severity": 50,
+      "note": "Text that self-identifies as protected / licensed goods.",
+      "terms": [
+        "officially licensed", "official merchandise", "licensed product",
+        "genuine licensed", "©", "®", "™", "copyright", "trademark",
+        "as seen on", "fan art of", "inspired by disney", "inspired by marvel"
+      ]
+    }
+  ]
+}

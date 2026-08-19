@@ -1,0 +1,65 @@
+{
+  "slug": "i-hike-so-i-can-eat-snacks-sticker-funny-hiking",
+  "listing": {
+    "source": "etsy",
+    "listing_id": "seed-001",
+    "title": "I Hike So I Can Eat Snacks Sticker | Funny Hiking Decal | Waterproof Vinyl Laptop Water Bottle",
+    "url": "https://www.etsy.com/listing/seed-001",
+    "shop": "TrailSnackCo",
+    "price": 3.75,
+    "currency": "USD",
+    "sales_estimate": null,
+    "review_count": 4820,
+    "rating": 4.9,
+    "favorites": 5600,
+    "in_cart": 34,
+    "bestseller": true,
+    "is_star_seller": true,
+    "bsr": null,
+    "tags": [
+      "hiking sticker",
+      "funny outdoor",
+      "snack lover"
+    ],
+    "image_urls": [],
+    "joke_text": "I Hike So I Can Eat Snacks Sticker | Funny Hiking Decal | Waterproof Vinyl Laptop Water Bottle",
+    "description": "",
+    "scraped_at": "",
+    "raw": {
+      "alt_copy": [
+        "Hiking: My Cardio For Snacks",
+        "Will Summit For Snacks",
+        "The Trail Is Just The Path To Trail Mix"
+      ],
+      "style": "flat vector die-cut, 3 flat colors, bold rounded sans, retro national-park palette"
+    }
+  },
+  "ip": {
+    "risk": "low",
+    "score": 0,
+    "hits": [],
+    "reasons": [
+      "no blocklist terms matched"
+    ],
+    "allowed": true
+  },
+  "perf_score": 0.7573,
+  "brief": {
+    "concept": "I Hike So I Can Eat Snacks",
+    "keep": "The humour / punchline — that is what makes it sell.",
+    "change": "Exact wording, layout, illustration and typography — all original.",
+    "alt_copy": [
+      "Hiking: My Cardio For Snacks",
+      "Will Summit For Snacks",
+      "The Trail Is Just The Path To Trail Mix"
+    ],
+    "style": "flat vector die-cut, 3 flat colors, bold rounded sans, retro national-park palette",
+    "image_prompt": "Die-cut vinyl sticker design, isolated on plain white background. On-sticker text reads exactly: \"Hiking: My Cardio For Snacks\". Style: flat vector die-cut, 3 flat colors, bold rounded sans, retro national-park palette. Outdoorsy/camping theme (mountains, pines, trail, or campfire as fits the joke). Clean thick white sticker border, centered composition, high contrast, print-ready, no photorealism, no gradients-heavy background, flat and bold.",
+    "negative_prompt": "no brand names, no logos, no trademarks, no copyrighted characters, no Disney/Marvel/Nintendo/sports-team IP, no celebrity likeness, no real fonts owned by others, no watermark, no signature, no other text than the specified copy, no NSFW",
+    "ip_guardrail": "Keep only the JOKE/CONCEPT. All artwork, exact wording, layout and typography must be original. Do not reference or reproduce any brand, character, logo or person from the source listing. If the concept can't be expressed without protected IP, drop it.",
+    "similarity_target": "85-90%"
+  },
+  "asset_path": "design.svg",
+  "gen_provider": "dryrun",
+  "gen_status": "dryrun"
+}

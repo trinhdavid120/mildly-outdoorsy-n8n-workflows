@@ -1,0 +1,132 @@
+[
+  {
+    "listing": {
+      "source": "etsy",
+      "listing_id": "seed-101",
+      "title": "Baby Yoda Camping Crew Sticker Cute Grogu Star Wars Outdoors Decal",
+      "url": "https://www.etsy.com/listing/seed-101",
+      "shop": "GalaxyCampfire",
+      "price": 4.5,
+      "currency": "USD",
+      "sales_estimate": null,
+      "review_count": 8900,
+      "rating": 4.9,
+      "favorites": 12000,
+      "in_cart": 60,
+      "bestseller": true,
+      "is_star_seller": true,
+      "bsr": null,
+      "tags": [
+        "baby yoda",
+        "grogu",
+        "star wars camping"
+      ],
+      "image_urls": [],
+      "joke_text": "Baby Yoda Camping Crew Sticker Cute Grogu Star Wars Outdoors Decal",
+      "description": "",
+      "scraped_at": "",
+      "raw": {}
+    },
+    "ip": {
+      "risk": "high",
+      "score": 75,
+      "hits": [
+        "Baby Yoda",
+        "Grogu",
+        "Star Wars",
+        "Yoda"
+      ],
+      "reasons": [
+        "franchise_character: matched 'Baby Yoda'",
+        "franchise_character: matched 'Grogu'",
+        "franchise_character: matched 'Star Wars'",
+        "franchise_character: matched 'Yoda'",
+        "multiple distinct protected terms present"
+      ],
+      "allowed": false
+    }
+  },
+  {
+    "listing": {
+      "source": "amazon",
+      "listing_id": "seed-102",
+      "title": "Yeti Cooler Adventure Mountains Sticker Officially Licensed Vinyl Decal",
+      "url": "https://www.amazon.com/dp/seed-102",
+      "shop": "BrandOutfitters",
+      "price": 6.99,
+      "currency": "USD",
+      "sales_estimate": null,
+      "review_count": 5400,
+      "rating": 4.8,
+      "favorites": null,
+      "in_cart": null,
+      "bestseller": true,
+      "is_star_seller": false,
+      "bsr": 900,
+      "tags": [
+        "yeti",
+        "cooler sticker",
+        "licensed"
+      ],
+      "image_urls": [],
+      "joke_text": "Yeti Cooler Adventure Mountains Sticker Officially Licensed Vinyl Decal",
+      "description": "",
+      "scraped_at": "",
+      "raw": {}
+    },
+    "ip": {
+      "risk": "high",
+      "score": 100,
+      "hits": [
+        "Officially Licensed",
+        "Yeti"
+      ],
+      "reasons": [
+        "trademark_brand: matched 'Yeti'",
+        "explicit_ip_signal: matched 'Officially Licensed'",
+        "multiple distinct protected terms present"
+      ],
+      "allowed": false
+    }
+  },
+  {
+    "listing": {
+      "source": "etsy",
+      "listing_id": "seed-103",
+      "title": "Life Is Good Mountain Bike Sticker Classic Outdoors Decal Waterproof",
+      "url": "https://www.etsy.com/listing/seed-103",
+      "shop": "ClassicTeeStickers",
+      "price": 3.99,
+      "currency": "USD",
+      "sales_estimate": null,
+      "review_count": 4200,
+      "rating": 4.85,
+      "favorites": 5000,
+      "in_cart": 30,
+      "bestseller": false,
+      "is_star_seller": true,
+      "bsr": null,
+      "tags": [
+        "life is good",
+        "mountain bike",
+        "positive vibes"
+      ],
+      "image_urls": [],
+      "joke_text": "Life Is Good Mountain Bike Sticker Classic Outdoors Decal Waterproof",
+      "description": "",
+      "scraped_at": "",
+      "raw": {}
+    },
+    "ip": {
+      "risk": "high",
+      "score": 60,
+      "hits": [
+        "Life Is Good"
+      ],
+      "reasons": [
+        "trademark_brand: matched 'Life Is Good'"
+      ],
+      "allowed": false
+    }
+  }
+]
