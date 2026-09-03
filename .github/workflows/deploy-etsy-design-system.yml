@@ -11,6 +11,7 @@ on:
     paths:
       - "R Designs - *.json"
       - "Teresa Rosie - *.json"
+      - "Etsy Design System - *.json"
       - "etsy-design-system-manifest.json"
       - "scripts/etsy_design_system_folder.py"
       - ".github/workflows/deploy-etsy-design-system.yml"
