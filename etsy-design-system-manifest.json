@@ -42,7 +42,7 @@
       "name": "slack_verdicts",
       "file": "Etsy Design System - Slack Verdicts.json",
       "live_name": "Etsy Design System - Slack Verdicts",
-      "n8n_workflow_id": null,
+      "n8n_workflow_id": "bMQC21tNR8atgRFb",
       "activate_after_sync": true,
       "purpose": "Every 2 min: read #etsy-shop-alerts (bot 'Etsy Design System'), take David's 'approve Rnnn' / 'revise Rnnn: notes' messages, and record them on that R row — STATUS Design For Review -> Ready for Mock-up / Revise, verbatim words in Approval/Revision Notes — then confirm in the channel. Rows not waiting for a verdict get an explanation, never a write."
     }
