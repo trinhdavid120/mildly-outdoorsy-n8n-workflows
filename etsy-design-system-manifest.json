@@ -27,7 +27,7 @@
       "file": "R Designs - Q Daily Scan.json",
       "live_name": "R Designs - Q Daily Scan",
       "n8n_workflow_id": "I48IOiO3ubEBqeqf",
-      "activate_after_sync": true,
+      "activate_after_sync": false,
       "purpose": "Daily 7AM PT: stamp Pipeline Control!B35 so the Mac poller runs W7 — Q Designs rows the VA flips to 'Design For Review' get fetched, researched (EverBee+eRank), planned, built as drafts on both shops with the hardened ink/niche/hero rules, audited, and flipped to Done. Poller self-stamps at 07:00 as fallback if this workflow is down."
     },
     {
