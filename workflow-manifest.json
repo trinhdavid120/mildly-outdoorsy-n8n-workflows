@@ -101,22 +101,6 @@
       "n8n_workflow_id": "",
       "activate_after_sync": false,
       "purpose": "Batch-generate TikTok 'spotted in the wild' videos: for each design, generate start frame (back) + end frame (front with design) via ChatGPT image gen, consistency-check with GPT-4o vision, upload frame pairs to Google Drive, then generate video via Higgsfield"
-    },
-    {
-      "name": "q_daily_scan",
-      "file": "R Designs - Q Daily Scan.json",
-      "live_name": "R Designs - Q Daily Scan",
-      "n8n_workflow_id": null,
-      "activate_after_sync": true,
-      "purpose": "Daily 7AM PT: stamp Pipeline Control!B35 so the Mac poller runs W7 \u2014 Q Designs rows the VA flips to 'Design For Review' get fetched, researched (EverBee+eRank), planned, built as drafts on both shops with the hardened ink/niche/hero rules, audited, and flipped to Done. Poller self-stamps at 07:00 as fallback if this workflow is down."
-    },
-    {
-      "name": "listing_watch",
-      "file": "R Designs - Listing Watch.json",
-      "live_name": "R Designs - Listing Watch",
-      "n8n_workflow_id": null,
-      "activate_after_sync": false,
-      "purpose": "Hourly at :23 PT: stamp Pipeline Control!B38 so the Mac poller runs W8 \u2014 scripts/listing_watcher.py takes the lowest TO DO / Draft Partial R row whose teardown gate is green and runs run_batch (one SKU, --workers 1) from the RELEASE worktree; parks with BLOCKED + Slack. Never activates a listing."
     }
   ]
 }

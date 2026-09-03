@@ -1,0 +1,38 @@
+name: Deploy R Designs workflows
+
+# Owns ONLY the "R Designs - *" workflows (Teresa Rosie listing pipeline on the Mac mini n8n).
+# Separate from the Mildly Outdoorsy deploy and the TikTok Video Factory action on purpose:
+# it reads its own manifest and fires only on its own files.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "R Designs - *.json"
+      - "r-designs-manifest.json"
+      - ".github/workflows/deploy-r-designs.yml"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare runner directories
+        run: |
+          mkdir -p "$HOME/actions-runner/_work/_temp"
+          mkdir -p "$HOME/actions-runner/_work/_tool"
+
+      - name: Dry run
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/deploy_workflows_to_n8n.py --manifest r-designs-manifest.json --dry-run
+
+      - name: Deploy R Designs workflows to n8n
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/deploy_workflows_to_n8n.py --manifest r-designs-manifest.json
