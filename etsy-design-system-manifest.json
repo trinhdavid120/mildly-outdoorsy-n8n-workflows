@@ -1,6 +1,21 @@
 {
-  "project": "r-designs-n8n",
+  "project": "etsy-design-system",
   "version": 1,
+  "folder": {
+    "name": "Etsy Design System",
+    "also_include": [
+      "R Designs - Audit Sweep",
+      "R Designs - Raw Archive Check",
+      "R Designs - Velocity Snapshot",
+      "R Designs - W0 Calendar",
+      "R Designs - W2 Brief Builder",
+      "R Designs - W5 Mockups",
+      "R Designs - W6 Listings",
+      "Teresa Rosie - R Designs Gatekeeper",
+      "Teresa Rosie - R Designs Runner",
+      "Teresa Rosie - Research Scheduler"
+    ]
+  },
   "defaults": {
     "activate_after_sync": false
   },

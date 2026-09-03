@@ -1,0 +1,46 @@
+name: Deploy Etsy Design System
+
+# Owns ONLY the Etsy Design System workflows (R Designs / Teresa Rosie on the Mac mini n8n).
+# Separate from the Mildly Outdoorsy deploy and the TikTok Video Factory action on purpose:
+# its own manifest, its own paths, and it never edits the shared deploy script.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "R Designs - *.json"
+      - "Teresa Rosie - *.json"
+      - "etsy-design-system-manifest.json"
+      - "scripts/etsy_design_system_folder.py"
+      - ".github/workflows/deploy-etsy-design-system.yml"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare runner directories
+        run: |
+          mkdir -p "$HOME/actions-runner/_work/_temp"
+          mkdir -p "$HOME/actions-runner/_work/_tool"
+
+      - name: Dry run
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/deploy_workflows_to_n8n.py --manifest etsy-design-system-manifest.json --dry-run
+
+      - name: Deploy Etsy Design System workflows to n8n
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/deploy_workflows_to_n8n.py --manifest etsy-design-system-manifest.json
+
+      - name: Keep the workflows in the Etsy Design System folder
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: python3 scripts/etsy_design_system_folder.py --manifest etsy-design-system-manifest.json
