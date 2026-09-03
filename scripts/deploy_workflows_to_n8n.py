@@ -252,8 +252,8 @@ def main() -> None:
     if not workflows:
         fail("No workflows found in manifest")
 
+    only_set = set(args.only) if args.only else set()
     if args.only:
-        only_set = set(args.only)
         workflows = [w for w in workflows if w["name"] in only_set]
         missing = only_set - {w["name"] for w in workflows}
         if missing:
@@ -264,7 +264,13 @@ def main() -> None:
         for workflow in workflows:
             export_path = repo_root / workflow["file"]
             if not export_path.exists():
-                fail(f"Missing workflow export: {export_path}")
+                # 2026-09-03: manifest entries whose export was never committed (Watchdog, Auto Reply
+                # Comments, Lifestyle Mockup x2, Error Alert) failed EVERY deploy, including unrelated
+                # new workflows. Absent export = skip with a warning; still fatal when asked for by --only.
+                if workflow.get("name") in only_set:
+                    fail(f"Missing workflow export: {export_path}")
+                print(f"WARNING skipping {workflow.get('name')}: export not in checkout ({export_path.name})", file=sys.stderr)
+                continue
             export_json = load_json(export_path)
             all_refs.extend(
                 collect_credential_references(workflow["name"], export_json)
@@ -278,7 +284,13 @@ def main() -> None:
     for workflow in workflows:
         export_path = repo_root / workflow["file"]
         if not export_path.exists():
-            fail(f"Missing workflow export: {export_path}")
+            # 2026-09-03: manifest entries whose export was never committed (Watchdog, Auto Reply
+            # Comments, Lifestyle Mockup x2, Error Alert) failed EVERY deploy, including unrelated
+            # new workflows. Absent export = skip with a warning; still fatal when asked for by --only.
+            if workflow.get("name") in only_set:
+                fail(f"Missing workflow export: {export_path}")
+            print(f"WARNING skipping {workflow.get('name')}: export not in checkout ({export_path.name})", file=sys.stderr)
+            continue
 
         export_json = load_json(export_path)
         live_name = workflow.get("live_name") or export_json.get("name") or workflow["name"]
