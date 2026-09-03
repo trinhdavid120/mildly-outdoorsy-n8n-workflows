@@ -44,7 +44,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// find the pipeline channel by name and open a 190 s window (the schedule is every 2 min)\nconst want = 'etsy-shop-alerts';\nconst chans = ($input.first().json.channels || []);\nconst ch = chans.find(c => c.name === want);\nif (!ch) throw new Error(`channel ${want} not visible to the bot — invite it with /invite`);\nreturn [{ json: { channel: ch.id, oldest: (Date.now() / 1000 - 190).toFixed(3) } }];"
+        "jsCode": "// find the pipeline channel by name; a 30-minute window (dedupe by ts keeps it idempotent)\nconst want = 'etsy-shop-alerts';\nconst chans = ($input.first().json.channels || []);\nconst ch = chans.find(c => c.name === want);\nif (!ch) throw new Error(`channel ${want} not visible to the bot — invite it with /invite`);\nreturn [{ json: { channel: ch.id, oldest: (Date.now() / 1000 - 1800).toFixed(3) } }];"
       },
       "name": "Pick channel",
       "type": "n8n-nodes-base.code",
@@ -57,7 +57,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://slack.com/api/conversations.history?channel={{ $json.channel }}&oldest={{ $json.oldest }}&limit=50",
+        "url": "=https://slack.com/api/conversations.history?channel={{ $json.channel }}&oldest={{ $json.oldest }}&limit=100",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "slackApi",
         "options": {}
@@ -78,7 +78,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// David's verdicts only: a human message like \"approve R306\" / \"revise R306: make the moon bigger\" / \"reject R306\".\n// Bot posts are ignored; each Slack ts is processed once (workflow static data).\nconst st = $getWorkflowStaticData('global'); st.seen = st.seen || [];\nconst msgs = ($input.first().json.messages || []);\nconst out = [];\nfor (const m of msgs) {\n  if (m.bot_id || (m.subtype && m.subtype !== 'file_share')) continue;\n  if (st.seen.includes(m.ts)) continue;\n  const t = String(m.text || '').trim();\n  const mm = t.match(/^(approve|revise|reject)\\s+(R\\d{2,4})\\b[\\s:\\-–—]*([\\s\\S]*)$/i);\n  if (!mm) continue;\n  st.seen.push(m.ts); if (st.seen.length > 300) st.seen = st.seen.slice(-300);\n  out.push({ json: { ts: m.ts, user: m.user, verdict: mm[1].toLowerCase(), sku: mm[2].toUpperCase(), note: mm[3].trim(), text: t } });\n}\nreturn out;"
+        "jsCode": "// David's verdicts: top-level messages AND thread replies. \"approve R306\" / \"revise R306: …\" / \"reject R306\";\n// inside a thread a bare \"approve\" takes the SKU from the parent message (\"R306 pilot is ready …\").\nconst st = $getWorkflowStaticData('global'); st.seen = st.seen || [];\nconst top = ($('Channel history').first().json.messages || []);\nconst byTs = {}; for (const m of top) byTs[m.ts] = m;\nconst all = [];\nfor (const m of top) all.push({ m, parent: null });\nfor (const it of $('Thread replies').all()) {\n  const arr = (it.json.messages || []);\n  for (const m of arr) { if (m.thread_ts && m.ts !== m.thread_ts) all.push({ m, parent: byTs[m.thread_ts] || arr.find(x => x.ts === m.thread_ts) || null }); }\n}\nconst out = [];\nfor (const { m, parent } of all) {\n  if (m.bot_id || (m.subtype && m.subtype !== 'file_share' && m.subtype !== 'thread_broadcast')) continue;\n  if (st.seen.includes(m.ts)) continue;\n  const t = String(m.text || '').trim();\n  const mm = t.match(/^(approve|approved|revise|revised|reject|rejected)\\b\\s*(R\\d{2,4})?\\b[\\s:\\-–—]*([\\s\\S]*)$/i);\n  if (!mm) continue;\n  let sku = (mm[2] || '').toUpperCase();\n  if (!sku && parent) { const pm = String(parent.text || '').match(/\\b(R\\d{2,4})\\b/); if (pm) sku = pm[1].toUpperCase(); }\n  if (!sku) continue;\n  st.seen.push(m.ts); if (st.seen.length > 300) st.seen = st.seen.slice(-300);\n  const verdict = mm[1].toLowerCase().replace(/d$/, '').replace('approve', 'approve');\n  out.push({ json: { ts: m.ts, user: m.user, verdict: verdict.startsWith('approv') ? 'approve' : (verdict.startsWith('revis') ? 'revise' : 'reject'), sku, note: (mm[3] || '').trim(), text: t } });\n}\nreturn out;"
       },
       "name": "Parse verdicts",
       "type": "n8n-nodes-base.code",
@@ -229,6 +229,40 @@
           "name": "Slack account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// threads with recent replies are read separately (conversations.replies); always emit one valid ts so the flow continues\nconst ch = $('Pick channel').first().json; const msgs = ($input.first().json.messages || []);\nconst out = [];\nfor (const m of msgs) {\n  if (m.reply_count && m.latest_reply && parseFloat(m.latest_reply) >= parseFloat(ch.oldest)) out.push({ json: { channel: ch.channel, ts: m.thread_ts || m.ts, oldest: ch.oldest } });\n}\nif (!out.length && msgs.length) out.push({ json: { channel: ch.channel, ts: msgs[0].ts, oldest: ch.oldest } });\nif (!out.length) out.push({ json: { channel: ch.channel, ts: '0', oldest: ch.oldest } });\nreturn out;"
+      },
+      "name": "Collect threads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        770,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://slack.com/api/conversations.replies?channel={{ $json.channel }}&ts={{ $json.ts }}&oldest={{ $json.oldest }}&limit=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "options": {}
+      },
+      "name": "Thread replies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "r9t9uEF4PlqB8AKd",
+          "name": "Slack account"
+        }
+      }
     }
   ],
   "connections": {
@@ -269,7 +303,7 @@
       "main": [
         [
           {
-            "node": "Parse verdicts",
+            "node": "Collect threads",
             "type": "main",
             "index": 0
           }
@@ -332,6 +366,28 @@
         [
           {
             "node": "Confirm in Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect threads": {
+      "main": [
+        [
+          {
+            "node": "Thread replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thread replies": {
+      "main": [
+        [
+          {
+            "node": "Parse verdicts",
             "type": "main",
             "index": 0
           }
