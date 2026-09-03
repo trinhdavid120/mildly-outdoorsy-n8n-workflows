@@ -75,10 +75,11 @@ def apply_tag(client: N8NClient, wf: Dict[str, Any], tag_id: str, dry_run: bool)
 def ensure_folder(client: N8NClient, project_id: str, name: str, dry_run: bool) -> Optional[str]:
     """-> folder id, or None when the API is not licensed / dry run. Prints why."""
     try:
-        folders = _items(client._request("GET", f"/api/v1/projects/{project_id}/folders?limit=100"))
+        folders = _items(client._request("GET", f"/api/v1/projects/{project_id}/folders"))
     except SystemExit:
-        print(f"WARNING [folder] the folder API is not available on this n8n license (feat:folders) — "
-              f"create the folder '{name}' in the UI and drag the tagged workflows in")
+        print(f"WARNING [folder] listing folders failed (the HTTP status and body are printed above; "
+              f"403 means the folder API needs the feat:folders license) — create the folder '{name}' "
+              f"in the UI and drag the tagged workflows in")
         return None
     for folder in folders:
         if folder.get("name") == name:
