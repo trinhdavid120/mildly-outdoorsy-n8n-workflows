@@ -1,0 +1,350 @@
+{
+  "name": "Etsy Design System - Slack Verdicts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/2 * * * *"
+            }
+          ]
+        }
+      },
+      "name": "Every 2 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://slack.com/api/conversations.list?types=private_channel,public_channel&exclude_archived=true&limit=200",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "options": {}
+      },
+      "name": "List channels",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "r9t9uEF4PlqB8AKd",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// find the pipeline channel by name and open a 190 s window (the schedule is every 2 min)\nconst want = 'etsy-shop-alerts';\nconst chans = ($input.first().json.channels || []);\nconst ch = chans.find(c => c.name === want);\nif (!ch) throw new Error(`channel ${want} not visible to the bot — invite it with /invite`);\nreturn [{ json: { channel: ch.id, oldest: (Date.now() / 1000 - 190).toFixed(3) } }];"
+      },
+      "name": "Pick channel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://slack.com/api/conversations.history?channel={{ $json.channel }}&oldest={{ $json.oldest }}&limit=50",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "options": {}
+      },
+      "name": "Channel history",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "r9t9uEF4PlqB8AKd",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// David's verdicts only: a human message like \"approve R306\" / \"revise R306: make the moon bigger\" / \"reject R306\".\n// Bot posts are ignored; each Slack ts is processed once (workflow static data).\nconst st = $getWorkflowStaticData('global'); st.seen = st.seen || [];\nconst msgs = ($input.first().json.messages || []);\nconst out = [];\nfor (const m of msgs) {\n  if (m.bot_id || (m.subtype && m.subtype !== 'file_share')) continue;\n  if (st.seen.includes(m.ts)) continue;\n  const t = String(m.text || '').trim();\n  const mm = t.match(/^(approve|revise|reject)\\s+(R\\d{2,4})\\b[\\s:\\-–—]*([\\s\\S]*)$/i);\n  if (!mm) continue;\n  st.seen.push(m.ts); if (st.seen.length > 300) st.seen = st.seen.slice(-300);\n  out.push({ json: { ts: m.ts, user: m.user, verdict: mm[1].toLowerCase(), sku: mm[2].toUpperCase(), note: mm[3].trim(), text: t } });\n}\nreturn out;"
+      },
+      "name": "Parse verdicts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://sheets.googleapis.com/v4/spreadsheets/1sZw3jk4MnglJW_cpcu0oco7QD-mM3NC0hgEfRSPNz9U/values/R%20Designs!A:L",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {}
+      },
+      "name": "Read R Designs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Al5KcqsEt5VQo0ng",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// join each verdict with its sheet row; only a row in \"Design For Review\" takes a verdict\nconst rows = $('Read R Designs').first().json.values || [];\nconst hdr = rows[0] || [];\nconst iSku = hdr.indexOf('SKU'), iSt = hdr.indexOf('STATUS'), iH = hdr.indexOf('Approval/Revision Notes');\nconst col = i => String.fromCharCode(65 + i);\nconst out = [];\nfor (const it of $('Parse verdicts').all()) {\n  const v = it.json; const r = rows.findIndex((row, k) => k > 0 && (row[iSku] || '').trim() === v.sku);\n  if (r < 0) { out.push({ json: { ...v, do_write: false, text_out: `${v.sku} is not on the R Designs sheet` } }); continue; }\n  const status = (rows[r][iSt] || '').trim();\n  if (status !== 'Design For Review') { out.push({ json: { ...v, do_write: false, text_out: `${v.sku} is not waiting for a verdict (status: ${status || 'blank'})` } }); continue; }\n  const rowNum = r + 1; const newStatus = v.verdict === 'approve' ? 'Ready for Mock-up' : 'Revise';\n  const batch = { valueInputOption: 'RAW', data: [\n    { range: `R Designs!${col(iSt)}${rowNum}`, values: [[newStatus]] },\n    { range: `R Designs!${col(iH)}${rowNum}`, values: [[`David via Slack ${new Date().toISOString().slice(0,16)}: ${v.text}`]] } ] };\n  out.push({ json: { ...v, do_write: true, batch, text_out: `recorded ${v.verdict} for ${v.sku} → status ${newStatus}; the next hourly tick acts on it` } });\n}\nreturn out;"
+      },
+      "name": "Decide",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "w1",
+              "leftValue": "={{ $json.do_write }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Row is waiting?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sheets.googleapis.com/v4/spreadsheets/1sZw3jk4MnglJW_cpcu0oco7QD-mM3NC0hgEfRSPNz9U/values:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.batch) }}"
+      },
+      "name": "Write verdict to sheet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        -120
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Al5KcqsEt5VQo0ng",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({channel: $('Pick channel').first().json.channel, text: ':white_check_mark: ' + $('Decide').item.json.text_out}) }}"
+      },
+      "name": "Confirm in Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        -120
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "r9t9uEF4PlqB8AKd",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({channel: $('Pick channel').first().json.channel, text: ':information_source: ' + $json.text_out}) }}"
+      },
+      "name": "Explain in Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        140
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "r9t9uEF4PlqB8AKd",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every 2 minutes": {
+      "main": [
+        [
+          {
+            "node": "List channels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List channels": {
+      "main": [
+        [
+          {
+            "node": "Pick channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick channel": {
+      "main": [
+        [
+          {
+            "node": "Channel history",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Channel history": {
+      "main": [
+        [
+          {
+            "node": "Parse verdicts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse verdicts": {
+      "main": [
+        [
+          {
+            "node": "Read R Designs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read R Designs": {
+      "main": [
+        [
+          {
+            "node": "Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide": {
+      "main": [
+        [
+          {
+            "node": "Row is waiting?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Row is waiting?": {
+      "main": [
+        [
+          {
+            "node": "Write verdict to sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Explain in Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write verdict to sheet": {
+      "main": [
+        [
+          {
+            "node": "Confirm in Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Los_Angeles",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "pinData": {},
+  "active": true
+}
