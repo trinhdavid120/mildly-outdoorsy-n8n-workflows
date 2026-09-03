@@ -35,7 +35,7 @@
       "file": "R Designs - Listing Watch.json",
       "live_name": "R Designs - Listing Watch",
       "n8n_workflow_id": "VlHMyxEcJsi1v58o",
-      "activate_after_sync": false,
+      "activate_after_sync": true,
       "purpose": "Hourly at :23 PT: stamp Pipeline Control!B38 so the Mac poller runs W8 — scripts/listing_watcher.py takes the lowest TO DO / Draft Partial R row whose teardown gate is green and runs run_batch (one SKU, --workers 1) from the RELEASE worktree; parks with BLOCKED + Slack. Never activates a listing."
     }
   ]
