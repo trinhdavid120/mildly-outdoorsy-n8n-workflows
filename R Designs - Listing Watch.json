@@ -2,7 +2,7 @@
   "name": "R Designs - Listing Watch",
   "nodes": [
     {
-      "name": "Every hour at :23",
+      "name": "Every 10 minutes",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
@@ -14,7 +14,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "expression": "23 * * * *"
+              "expression": "*/10 * * * *"
             }
           ]
         }
@@ -47,7 +47,7 @@
     }
   ],
   "connections": {
-    "Every hour at :23": {
+    "Every 10 minutes": {
       "main": [
         [
           {
