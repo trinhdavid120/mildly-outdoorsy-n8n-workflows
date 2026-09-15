@@ -39,4 +39,22 @@ assert.equal(workflow.connections['Pick channel'].main[0][0].node,'Read R Design
 assert.equal(workflow.connections['Read R Designs'].main[0][0].node,'Channel history');
 assert.equal(workflow.connections['Parse verdicts'].main[0][0].node,'Decide');
 assert.equal(workflow.connections['Write verdict to sheet'].main[0][0].node,'Mark applied verdict');
-console.log('PASS: old review replies, replaced previews, retryable writes, deduplication and explicit SKU verdicts.');
+// A corrected pilot posted again with the same Drive preview (R404/R408, 2026-09-15): David's reply on the earlier post, given
+// after the newer one, is read and counts; a reply given before the newer post, or on a post with another preview, does not.
+const same = 'Preview in Drive: <https://drive.google.com/file/d/SAMEFILE/view?usp=drivesdk>';
+data['Read R Designs'] = {values:[['SKU','STATUS'],['R404','Design For Review']]};
+data['Channel history'] = {ok:true,messages:[
+  {ts:'20002.001',bot_id:'bot',text:':art: R404 pilot is ready for approval\n'+same},
+  {ts:'20001.001',bot_id:'bot',text:':art: R404 pilot is ready for approval\n'+same},
+  {ts:'20000.001',bot_id:'bot',text:':art: R404 pilot is ready for approval\nPreview in Drive: <https://drive.google.com/file/d/OTHERFILE/view>'}]};
+const read = run('Collect threads').map(x => x.json);
+assert.deepEqual(read.map(x => x.ts), ['20002.001','20001.001'], 'the replaced post with the same preview must be read, and only that one');
+assert.equal(read[1].oldest, '20002.001', 'only replies after the newest post are read on a replaced post');
+data['Thread replies']=[{json:{ok:true,messages:[{ts:'20003.001',thread_ts:'20001.001',user:'david',text:'approve'}]}}];
+verdict=run('Parse verdicts'); assert.equal(verdict.length,1,'a reply on the replaced post after the newest post was dropped');
+assert.equal(verdict[0].json.sku,'R404'); assert.equal(verdict[0].json.verdict,'approve');
+data['Thread replies'][0].json.messages=[{ts:'20001.500',thread_ts:'20001.001',user:'david',text:'approve'}];
+assert.equal(run('Parse verdicts').length,0,'a reply given before the newer post answered the version it replaced');
+data['Thread replies'][0].json.messages=[{ts:'20004.001',thread_ts:'20000.001',user:'david',text:'approve'}];
+assert.equal(run('Parse verdicts').length,0,'a reply on a post with a different preview was applied');
+console.log('PASS: old review replies, replaced previews, same-preview replies, retryable writes, deduplication and explicit SKU verdicts.');
