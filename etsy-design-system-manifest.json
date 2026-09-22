@@ -45,6 +45,22 @@
       "n8n_workflow_id": "bMQC21tNR8atgRFb",
       "activate_after_sync": true,
       "purpose": "Every 2 min: read #etsy-shop-alerts (bot 'Etsy Design System'), take David's 'approve Rnnn' / 'revise Rnnn: notes' messages, and record them on that R row — STATUS Design For Review -> Ready for Mock-up / Revise, verbatim words in Approval/Revision Notes — then confirm in the channel. Rows not waiting for a verdict get an explanation, never a write."
+    },
+    {
+      "name": "codex_test_watch",
+      "file": "R Designs - Codex Test Watch.json",
+      "live_name": "R Designs - Codex Test Watch",
+      "n8n_workflow_id": "",
+      "activate_after_sync": true,
+      "purpose": "Every 2 minutes: stamp Pipeline Control!C38 so the Mac poller runs the isolated Codex test lane against R Designs - Codex Test. Only R8000-R8999 rows are accepted."
+    },
+    {
+      "name": "codex_test_verdicts",
+      "file": "Etsy Design System - Codex Test Verdicts.json",
+      "live_name": "Etsy Design System - Codex Test Verdicts",
+      "n8n_workflow_id": "",
+      "activate_after_sync": true,
+      "purpose": "Every 2 minutes: apply Slack approve/revise/reject verdicts for R8000-R8999 to the R Designs - Codex Test tab only."
     }
   ]
 }
