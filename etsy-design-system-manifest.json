@@ -52,7 +52,7 @@
       "live_name": "R Designs - Codex Test Watch",
       "n8n_workflow_id": "YwV34UfC5jTqVBbE",
       "activate_after_sync": true,
-      "purpose": "Every 2 minutes: stamp Pipeline Control!C38 so the Mac poller runs the isolated Codex test lane against R Designs - Codex Test. Only R8000-R8999 rows are accepted."
+      "purpose": "Every 2 minutes: stamp Pipeline Control!C38 so the Mac poller runs the isolated Codex test lane against R Designs - Codex Test. Only X000-X999 rows are accepted."
     },
     {
       "name": "codex_test_verdicts",
@@ -60,7 +60,7 @@
       "live_name": "Etsy Design System - Codex Test Verdicts",
       "n8n_workflow_id": "3HxwAcOXLzjUhS58",
       "activate_after_sync": true,
-      "purpose": "Every 2 minutes: apply Slack approve/revise/reject verdicts for R8000-R8999 to the R Designs - Codex Test tab only."
+      "purpose": "Every 2 minutes: apply Slack approve/revise/reject verdicts for X000-X999 to the R Designs - Codex Test tab only."
     }
   ]
 }

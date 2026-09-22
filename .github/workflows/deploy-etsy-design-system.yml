@@ -34,6 +34,9 @@ jobs:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
         run: python3 scripts/deploy_workflows_to_n8n.py --manifest etsy-design-system-manifest.json --dry-run
 
+      - name: Test Etsy Slack verdict routing
+        run: node scripts/test_etsy_slack_verdicts.js
+
       - name: Deploy Etsy Design System workflows to n8n
         env:
           N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}

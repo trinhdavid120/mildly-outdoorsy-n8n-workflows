@@ -57,4 +57,34 @@ data['Thread replies'][0].json.messages=[{ts:'20001.500',thread_ts:'20001.001',u
 assert.equal(run('Parse verdicts').length,0,'a reply given before the newer post answered the version it replaced');
 data['Thread replies'][0].json.messages=[{ts:'20004.001',thread_ts:'20000.001',user:'david',text:'approve'}];
 assert.equal(run('Parse verdicts').length,0,'a reply on a post with a different preview was applied');
-console.log('PASS: old review replies, replaced previews, same-preview replies, retryable writes, deduplication and explicit SKU verdicts.');
+
+// R8xxx is a normal production SKU again; X000-X999 belongs only to the Codex test lane.
+state={}; data['Pick channel']={channel:'fixture',oldest:'0'}; data['Thread replies']=[];
+data['Channel history']={ok:true,messages:[{ts:'30001.001',user:'david',text:'approve R8000'}]};
+verdict=run('Parse verdicts'); assert.equal(verdict[0].json.sku,'R8000');
+data['Channel history'].messages=[{ts:'30002.001',user:'david',text:'approve X001'}];
+assert.equal(run('Parse verdicts').length,0,'the production verdict reader accepted an X test SKU');
+
+const testWorkflow = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'Etsy Design System - Codex Test Verdicts.json')));
+const testNodes = Object.fromEntries(testWorkflow.nodes.map(n => [n.name, n]));
+let testState={}, testData={}, testInput=[], testCurrent={};
+function runTest(name) {
+  const $ = label => ({first:()=>({json:testData[label]}), all:()=>testData[label], item:{json:testData[label]}});
+  return new Function('$getWorkflowStaticData', '$', '$input', '$json', testNodes[name].parameters.jsCode)(
+    ()=>testState, $, {first:()=>testInput[0], all:()=>testInput}, testCurrent);
+}
+testData['Pick channel']={channel:'fixture',oldest:'0'};
+testData['Read Codex Test Rows']={values:[['SKU','STATUS'],['X001','Design For Review']]};
+testData['Channel history']={ok:true,messages:[{ts:'40001.001',bot_id:'bot',text:'[Codex Test] :art: X001 pilot is ready for approval'}]};
+assert.equal(runTest('Collect threads')[0].json.ts,'40001.001');
+testData['Thread replies']=[{json:{ok:true,messages:[{ts:'40002.001',thread_ts:'40001.001',user:'david',text:'approve'}]}}];
+let testVerdict=runTest('Parse verdicts');
+assert.equal(testVerdict[0].json.sku,'X001'); assert.equal(testVerdict[0].json.verdict,'approve');
+testData['Thread replies']=[];
+testData['Channel history'].messages=[{ts:'40003.001',user:'david',text:'revise X999: move the text closer'}];
+testVerdict=runTest('Parse verdicts');
+assert.equal(testVerdict[0].json.sku,'X999'); assert.equal(testVerdict[0].json.note,'move the text closer');
+testData['Channel history'].messages=[{ts:'40004.001',user:'david',text:'approve R8000'}];
+assert.equal(runTest('Parse verdicts').length,0,'the Codex test verdict reader accepted an R production SKU');
+
+console.log('PASS: review threads, replaced previews, retryable writes, and isolated R/X verdict namespaces.');
